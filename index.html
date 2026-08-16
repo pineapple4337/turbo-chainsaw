@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MUN Chair Suite</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-6 font-sans">
+
+  <header class="max-w-6xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold tracking-wide text-indigo-400">MUN Chair Suite</h1>
+    <span class="text-xs px-2 py-1 bg-slate-800 rounded text-slate-400 border border-slate-700">Client-Side Engine</span>
+  </header>
+
+  <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+    
+    <!-- GENERAL SPEAKERS LIST (GSL) -->
+    <section class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg flex flex-col justify-between">
+      <div>
+        <h2 class="text-xl font-semibold text-slate-200 mb-4">General Speakers List</h2>
+        
+        <!-- Timer Display -->
+        <div class="bg-slate-900 rounded-lg p-6 text-center border border-slate-700/50 mb-6">
+          <div id="current-speaker" class="text-indigo-400 text-sm font-semibold uppercase tracking-wider mb-1">No Speaker Selected</div>
+          <div id="timer-display" class="text-5xl font-mono font-bold my-2 text-white">01:00</div>
+          <div class="flex justify-center gap-2 mt-4">
+            <button onclick="toggleTimer()" id="timer-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded font-medium text-sm transition">Start</button>
+            <button onclick="resetTimer()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded font-medium text-sm transition">Reset</button>
+          </div>
+        </div>
+
+        <!-- Speaker Input -->
+        <div class="flex gap-2 mb-4">
+          <input type="text" id="delegate-input" placeholder="Enter Country Name" class="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+          <button onclick="addSpeaker()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded text-sm font-medium transition">Add</button>
+        </div>
+
+        <!-- Speaker List Queue -->
+        <ol id="gsl-list" class="space-y-2 max-h-48 overflow-y-auto pr-1 text-sm"></ol>
+      </div>
+
+      <button onclick="nextSpeaker()" class="w-full mt-4 py-2 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 rounded text-sm font-medium transition">Next Speaker</button>
+    </section>
+
+    <!-- MOTIONS & DISRUPTIVENESS -->
+    <section class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg flex flex-col justify-between">
+      <div>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold text-slate-200">Motions</h2>
+          <button onclick="toggleSortOrder()" id="sort-btn" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-slate-300 transition">
+            Order: Most Disruptive
+          </button>
+        </div>
+
+        <!-- Motion Input Form -->
+        <div class="grid grid-cols-1 gap-3 mb-6 bg-slate-900/50 p-4 rounded-lg border border-slate-700/40">
+          <input type="text" id="proposer-input" placeholder="Proposing Country" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+          
+          <select id="type-input" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-slate-300">
+            <option value="Unmoderated Caucus" data-rank="10">Unmoderated Caucus (Rank 10)</option>
+            <option value="Moderated Caucus" data-rank="8">Moderated Caucus (Rank 8)</option>
+            <option value="Consultation of Whole" data-rank="6">Consultation of Whole (Rank 6)</option>
+            <option value="Closure of Debate" data-rank="4">Closure of Debate (Rank 4)</option>
+            <option value="Adjournment of Meeting" data-rank="2">Adjournment of Meeting (Rank 2)</option>
+          </select>
+
+          <input type="text" id="topic-input" placeholder="Topic / Specs (e.g. 10m total, 45s speaking time)" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+
+          <button onclick="addMotion()" class="bg-indigo-600 hover:bg-indigo-500 py-2 rounded text-sm font-medium transition">Submit Motion</button>
+        </div>
+
+        <!-- Motions Display -->
+        <ul id="motions-list" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-sm"></ul>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // --- STATE ---
+    let gsl = [];
+    let motions = [];
+    let isMostDisruptiveFirst = true;
+    
+    // Timer State
+    let timerInterval = null;
+    let defaultTime = 60;
+    let timeRemaining = defaultTime;
+
+    // --- GSL LOGIC ---
+    function addSpeaker() {
+      const input = document.getElementById('delegate-input');
+      const name = input.value.trim();
+      if (!name) return;
+      
+      gsl.push(name);
+      input.value = '';
+      renderGSL();
+    }
+
+    function renderGSL() {
+      const listEl = document.getElementById('gsl-list');
+      const speakerEl = document.getElementById('current-speaker');
+      listEl.innerHTML = '';
+
+      if (gsl.length > 0) {
+        speakerEl.textContent = `Current: ${gsl[0]}`;
+      } else {
+        speakerEl.textContent = 'No Speaker Selected';
+      }
+
+      gsl.slice(1).forEach((country, index) => {
+        const li = document.createElement('li');
+        li.className = 'flex justify-between items-center bg-slate-900/80 px-3 py-2 rounded text-slate-300 border border-slate-700/30';
+        li.innerHTML = `<span>${index + 2}. ${country}</span>`;
+        listEl.appendChild(li);
+      });
+    }
+
+    function nextSpeaker() {
+      if (gsl.length > 0) gsl.shift();
+      resetTimer();
+      renderGSL();
+    }
+
+    // --- TIMER LOGIC ---
+    function updateTimerDisplay() {
+      const mins = String(Math.floor(timeRemaining / 60)).padStart(2, '0');
+      const secs = String(timeRemaining % 60).padStart(2, '0');
+      document.getElementById('timer-display').textContent = `${mins}:${secs}`;
+    }
+
+    function toggleTimer() {
+      const btn = document.getElementById('timer-btn');
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        btn.textContent = 'Start';
+      } else {
+        if (timeRemaining <= 0) return;
+        btn.textContent = 'Pause';
+        timerInterval = setInterval(() => {
+          timeRemaining--;
+          updateTimerDisplay();
+          if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            btn.textContent = 'Start';
+          }
+        }, 1000);
+      }
+    }
+
+    function resetTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        document.getElementById('timer-btn').textContent = 'Start';
+      }
+      timeRemaining = defaultTime;
+      updateTimerDisplay();
+    }
+
+    // --- MOTIONS LOGIC ---
+    function addMotion() {
+      const proposer = document.getElementById('proposer-input').value.trim();
+      const typeSelect = document.getElementById('type-input');
+      const type = typeSelect.value;
+      const rank = parseInt(typeSelect.options[typeSelect.selectedIndex].dataset.rank);
+      const topic = document.getElementById('topic-input').value.trim();
+
+      if (!proposer || !topic) return;
+
+      motions.push({ id: Date.now(), proposer, type, rank, topic });
+      
+      document.getElementById('proposer-input').value = '';
+      document.getElementById('topic-input').value = '';
+
+      renderMotions();
+    }
+
+    function toggleSortOrder() {
+      isMostDisruptiveFirst = !isMostDisruptiveFirst;
+      document.getElementById('sort-btn').textContent = 
+        isMostDisruptiveFirst ? 'Order: Most Disruptive' : 'Order: Least Disruptive';
+      renderMotions();
+    }
+
+    function renderMotions() {
+      const listEl = document.getElementById('motions-list');
+      listEl.innerHTML = '';
+
+      // Sort by rank according to current toggle
+      const sorted = [...motions].sort((a, b) => 
+        isMostDisruptiveFirst ? b.rank - a.rank : a.rank - b.rank
+      );
+
+      sorted.forEach(m => {
+        const li = document.createElement('li');
+        li.className = 'bg-slate-900 border border-slate-700/60 p-3 rounded flex flex-col gap-1';
+        li.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-indigo-400">${m.type}</span>
+            <span class="text-xs text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">Rank ${m.rank}</span>
+          </div>
+          <div class="text-xs text-slate-300">Proposed by <span class="text-slate-100 font-medium">${m.proposer}</span></div>
+          <div class="text-xs text-slate-400 italic">${m.topic}</div>
+        `;
+        listEl.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
