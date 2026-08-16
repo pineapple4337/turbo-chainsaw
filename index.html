@@ -143,8 +143,6 @@
             </div>
 
             <!-- Timer Display -->
-
-            <!-- Timer Display -->
             <div class="bg-slate-900 text-emerald-400 rounded-lg p-6 text-center font-mono text-5xl font-bold tracking-widest shadow-inner relative overflow-hidden" id="timer-box">
               <span id="gsl-timer-display">01:30</span>
             </div>
@@ -176,6 +174,7 @@
               </div>
               <p id="yield-warning" class="text-[10px] text-amber-600 hidden font-medium text-center">Yielding to POIs/Delegate disallowed under 15 seconds (Rule 4.2.1.4)</p>
             </div>
+          </div>
 
           <!-- Queue Management -->
           <div class="lg:col-span-2 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col justify-between overflow-hidden">
@@ -314,7 +313,7 @@
           </div>
         </div>
 
-        <!-- Substantive Roll Call Voting Panel (Relocated Here) -->
+        <!-- Substantive Roll Call Voting Panel -->
         <div id="substantive-voting-panel" class="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-4">
           <div class="flex justify-between items-center border-b pb-2">
             <div>
@@ -328,7 +327,7 @@
 
           <!-- Roll Call Voting Grid -->
           <div id="voting-grid-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-1 max-h-[500px] overflow-y-auto">
-          <!-- Dynamic Roll Call Voting Grid Cards -->
+            <!-- Dynamic Roll Call Voting Grid Cards -->
           </div>
 
           <!-- Live Voting Tallies -->
@@ -346,6 +345,8 @@
           </div>
         </div>
       </section>
+
+      <!-- TAB 5: SETTINGS -->
       <section id="tab-settings" class="hidden space-y-4">
         <div class="bg-white p-6 border border-slate-200 rounded-lg shadow-sm">
           <h2 class="font-bold text-slate-800 text-sm uppercase tracking-wide border-b pb-2 mb-4">Settings</h2>
@@ -354,7 +355,6 @@
       </section>
     </main>
   </div>
-
   <script>
     // --- OFFICIAL UN MEMBER STATES DATABASE (193 STATES + CODES FOR FLAGS) ---
     const UN_MEMBER_STATES = [
@@ -442,7 +442,7 @@
     let currentGSLSpeaker = null;
     let gslTimerInterval = null;
     let gslTimeRemaining = 90;
-    let votingVotes = {}; // { delegateName: 'YES'|'NO'|'ABSTAIN'|'PASS' }
+    let votingVotes = {};
 
     // --- INITIALIZATION ---
     window.addEventListener('DOMContentLoaded', () => {
@@ -604,7 +604,6 @@
 
       document.getElementById('roster-count').textContent = `${roster.length} Delegates`;
 
-      // Update ROP Metrics
       const total = roster.length;
       const present = roster.filter(d => d.status === 'Present').length;
       const pv = roster.filter(d => d.status === 'Present & Voting').length;
@@ -616,7 +615,6 @@
       document.getElementById('stat-pv').textContent = pv;
       document.getElementById('stat-absent').textContent = absent;
 
-      // Quorum (1/3 of total)
       const quorum = Math.ceil(total / 3);
       document.getElementById('stat-quorum').textContent = quorum;
 
@@ -629,11 +627,9 @@
         quorumBadge.className = "px-2 py-1 rounded text-[10px] font-bold uppercase text-center bg-red-100 text-red-700";
       }
 
-      // Simple Majority (> 50% attending)
       const simple = Math.floor(totalAttending / 2) + 1;
       document.getElementById('stat-simple').textContent = totalAttending > 0 ? simple : 0;
 
-      // 2/3 Substantive Majority
       const twoThirds = Math.ceil((totalAttending * 2) / 3);
       document.getElementById('stat-two-thirds').textContent = totalAttending > 0 ? twoThirds : 0;
     }
@@ -653,13 +649,14 @@
         motionProp.innerHTML += `<option value="${d.name}">${d.name}</option>`;
       });
 
-      // Yield Delegate Dropdown
+      // Yield Delegate Dropdown (FIXED: Added missing brace)
       const yieldSelect = document.getElementById('yield-delegate-select');
       if (yieldSelect) {
         yieldSelect.innerHTML = '<option value="">Select Delegate...</option>';
         roster.filter(d => d.status !== 'Absent').forEach(d => {
           yieldSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
         });
+      }
 
       // Resolution Sponsors & Signatories
       const resSpon = document.getElementById('res-sponsors');
@@ -796,7 +793,6 @@
     }
 
     function checkYieldRules() {
-      // Rule 4.2.1.4: Yielding to POIs or Delegate disallowed if remaining time < 15s
       const warning = document.getElementById('yield-warning');
       const yieldPoints = document.getElementById('yield-points');
       const yieldDelegate = document.getElementById('yield-delegate');
@@ -875,7 +871,6 @@
         return;
       }
 
-      // Precedence weights (Rule 4.5)
       let precedence = 0;
       let label = "";
 
@@ -925,7 +920,7 @@
       };
 
       motions.push(motion);
-      motions.sort((a, b) => b.precedence - a.precedence); // Sort by highest precedence
+      motions.sort((a, b) => b.precedence - a.precedence);
       saveState();
       renderMotions();
     }
@@ -989,8 +984,8 @@
       }
 
       const totalAttending = roster.filter(d => d.status !== 'Absent').length;
-      const maxSponsors = Math.floor(totalAttending * 0.10); // Max 10%
-      const minCombined = Math.ceil(totalAttending * 0.20);  // Min 20%
+      const maxSponsors = Math.floor(totalAttending * 0.10);
+      const minCombined = Math.ceil(totalAttending * 0.20);
 
       if (sponsors.length > maxSponsors && maxSponsors > 0) {
         alert(`Rule Threshold Warning: Sponsors (${sponsors.length}) exceed maximum threshold of 10% (${maxSponsors}).`);
@@ -1046,7 +1041,6 @@
       document.getElementById('voting-target-res').textContent = targetCode;
       votingVotes = {};
       
-      // Default votes to 'NONE'
       roster.filter(d => d.status !== 'Absent').forEach(d => {
         votingVotes[d.name] = 'NONE';
       });
@@ -1057,7 +1051,6 @@
 
     function setVote(name, vote) {
       const del = roster.find(d => d.name === name);
-      // Rule 4.6.3: Present & Voting cannot abstain
       if (del && del.status === 'Present & Voting' && vote === 'ABSTAIN') {
         alert(`Rule 4.6.3 Violation: Delegate ${name} is registered as 'Present & Voting' and cannot abstain.`);
         return;
@@ -1096,7 +1089,6 @@
         container.appendChild(card);
       });
       
-      // Compute Live Tallies
       let yes = 0, no = 0, abstain = 0, pass = 0;
       Object.values(votingVotes).forEach(v => {
         if (v === 'YES') yes++;
@@ -1111,7 +1103,6 @@
       document.getElementById('tally-pass').textContent = pass;
       document.getElementById('tally-total').textContent = yes + no + abstain + pass;
 
-      // Check Substantive Threshold (2/3 of votes cast, excluding abstentions)
       const totalAttending = attending.length;
       const requiredTwoThirds = Math.ceil((totalAttending * 2) / 3);
       const banner = document.getElementById('voting-result-banner');
