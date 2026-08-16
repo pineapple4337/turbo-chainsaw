@@ -3,100 +3,317 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MUN Chair Suite</title>
+  <title>MUN Chair Suite with Roll Call</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-6 font-sans">
 
-  <header class="max-w-6xl mx-auto mb-8 border-b border-slate-700 pb-4 flex justify-between items-center">
-    <h1 class="text-2xl font-bold tracking-wide text-indigo-400">MUN Chair Suite</h1>
-    <span class="text-xs px-2 py-1 bg-slate-800 rounded text-slate-400 border border-slate-700">Client-Side Engine</span>
+  <!-- TOP BAR -->
+  <header class="max-w-7xl mx-auto mb-6 border-b border-slate-700 pb-4 flex flex-wrap justify-between items-center gap-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-wide text-indigo-400">MUN Chair Suite</h1>
+      <p class="text-xs text-slate-400">Client-Side Engine with Organization Presets</p>
+    </div>
+
+    <!-- TAB NAVIGATION -->
+    <nav class="flex gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
+      <button onclick="switchTab('debate')" id="tab-btn-debate" class="px-4 py-1.5 rounded text-sm font-medium bg-indigo-600 text-white transition">Debate & Motions</button>
+      <button onclick="switchTab('rollcall')" id="tab-btn-rollcall" class="px-4 py-1.5 rounded text-sm font-medium text-slate-400 hover:text-white transition">Roll Call (<span id="tab-present-count">0</span>)</button>
+    </nav>
   </header>
 
-  <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-    
-    <!-- GENERAL SPEAKERS LIST (GSL) -->
-    <section class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg flex flex-col justify-between">
-      <div>
-        <h2 class="text-xl font-semibold text-slate-200 mb-4">General Speakers List</h2>
+  <main class="max-w-7xl mx-auto">
+
+    <!-- TAB 1: DEBATE & MOTIONS -->
+    <div id="tab-debate" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      
+      <!-- GENERAL SPEAKERS LIST -->
+      <section class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg flex flex-col justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-slate-200 mb-4">General Speakers List (GSL)</h2>
+          
+          <!-- Timer Display -->
+          <div class="bg-slate-900 rounded-lg p-6 text-center border border-slate-700/50 mb-6">
+            <div id="current-speaker" class="text-indigo-400 text-sm font-semibold uppercase tracking-wider mb-1">No Speaker Selected</div>
+            <div id="timer-display" class="text-5xl font-mono font-bold my-2 text-white">01:00</div>
+            <div class="flex justify-center gap-2 mt-4">
+              <button onclick="toggleTimer()" id="timer-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded font-medium text-sm transition">Start</button>
+              <button onclick="resetTimer()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded font-medium text-sm transition">Reset</button>
+            </div>
+          </div>
+
+          <!-- Add Speaker manually from preset/attendance -->
+          <div class="flex gap-2 mb-4">
+            <select id="gsl-select-input" class="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-slate-200">
+              <option value="">-- Select Country to Add to GSL --</option>
+            </select>
+            <button onclick="addSpeakerFromSelect()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded text-sm font-medium transition">Add</button>
+          </div>
+
+          <!-- Speaker Queue -->
+          <ol id="gsl-list" class="space-y-2 max-h-48 overflow-y-auto pr-1 text-sm"></ol>
+        </div>
+
+        <button onclick="nextSpeaker()" class="w-full mt-4 py-2 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 rounded text-sm font-medium transition">Next Speaker</button>
+      </section>
+
+      <!-- MOTIONS & DISRUPTIVENESS -->
+      <section class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-slate-200">Motions</h2>
+            <button onclick="toggleSortOrder()" id="sort-btn" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-slate-300 transition">
+              Order: Most Disruptive
+            </button>
+          </div>
+
+          <!-- Motion Form -->
+          <div class="grid grid-cols-1 gap-3 mb-6 bg-slate-900/50 p-4 rounded-lg border border-slate-700/40">
+            <select id="proposer-input" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-slate-300">
+              <option value="">-- Proposing Country --</option>
+            </select>
+            
+            <select id="type-input" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-slate-300">
+              <option value="Unmoderated Caucus" data-rank="10">Unmoderated Caucus (Rank 10)</option>
+              <option value="Moderated Caucus" data-rank="8">Moderated Caucus (Rank 8)</option>
+              <option value="Consultation of Whole" data-rank="6">Consultation of Whole (Rank 6)</option>
+              <option value="Closure of Debate" data-rank="4">Closure of Debate (Rank 4)</option>
+              <option value="Adjournment of Meeting" data-rank="2">Adjournment of Meeting (Rank 2)</option>
+            </select>
+
+            <input type="text" id="topic-input" placeholder="Topic / Specs (e.g. 10m total, 45s per speaker)" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+
+            <button onclick="addMotion()" class="bg-indigo-600 hover:bg-indigo-500 py-2 rounded text-sm font-medium transition">Submit Motion</button>
+          </div>
+
+          <!-- Motions Queue -->
+          <ul id="motions-list" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-sm"></ul>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- TAB 2: ROLL CALL & ORGANIZATIONS -->
+    <div id="tab-rollcall" class="hidden space-y-6">
+      
+      <!-- PRESET LOADER & CUSTOM COUNTRY INGESTION -->
+      <section class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg">
+        <h2 class="text-xl font-semibold text-slate-200 mb-3">Load Organization Roster</h2>
+        <div class="flex flex-wrap gap-3 mb-4">
+          <button onclick="loadPreset('UNSC')" class="px-4 py-2 bg-indigo-700 hover:bg-indigo-600 text-white rounded text-sm font-medium transition">UN Security Council (15)</button>
+          <button onclick="loadPreset('ASEAN')" class="px-4 py-2 bg-indigo-700 hover:bg-indigo-600 text-white rounded text-sm font-medium transition">ASEAN (10)</button>
+          <button onclick="loadPreset('EU')" class="px-4 py-2 bg-indigo-700 hover:bg-indigo-600 text-white rounded text-sm font-medium transition">European Union (27)</button>
+          <button onclick="loadPreset('UNGA')" class="px-4 py-2 bg-indigo-700 hover:bg-indigo-600 text-white rounded text-sm font-medium transition">UNGA Sample (25)</button>
+          <button onclick="clearAllData()" class="px-4 py-2 bg-red-800 hover:bg-red-700 text-white rounded text-sm font-medium transition ml-auto">Reset All Data</button>
+        </div>
         
-        <!-- Timer Display -->
-        <div class="bg-slate-900 rounded-lg p-6 text-center border border-slate-700/50 mb-6">
-          <div id="current-speaker" class="text-indigo-400 text-sm font-semibold uppercase tracking-wider mb-1">No Speaker Selected</div>
-          <div id="timer-display" class="text-5xl font-mono font-bold my-2 text-white">01:00</div>
-          <div class="flex justify-center gap-2 mt-4">
-            <button onclick="toggleTimer()" id="timer-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded font-medium text-sm transition">Start</button>
-            <button onclick="resetTimer()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded font-medium text-sm transition">Reset</button>
+        <!-- Add Single Country -->
+        <div class="flex gap-2">
+          <input type="text" id="single-country-input" placeholder="Add Single Custom Country..." class="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+          <button onclick="addCustomCountry()" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-sm font-medium transition">Add Country</button>
+        </div>
+      </section>
+
+      <!-- ATTENDANCE STATS & DELEGATE ROSTER -->
+      <section class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg">
+        <div class="flex flex-wrap justify-between items-center mb-4 pb-4 border-b border-slate-700 gap-4">
+          <h2 class="text-xl font-semibold text-slate-200">Attendance Roster</h2>
+          
+          <!-- Quorum Readout -->
+          <div class="flex gap-4 text-xs">
+            <div class="bg-slate-900 px-3 py-2 rounded border border-slate-700">Present: <span id="stat-present" class="font-bold text-indigo-400">0</span></div>
+            <div class="bg-slate-900 px-3 py-2 rounded border border-slate-700">P&V: <span id="stat-pv" class="font-bold text-indigo-400">0</span></div>
+            <div class="bg-slate-900 px-3 py-2 rounded border border-slate-700">Total Attending: <span id="stat-total" class="font-bold text-emerald-400">0</span></div>
+            <div class="bg-slate-900 px-3 py-2 rounded border border-slate-700">Simple Majority (>50%): <span id="stat-maj" class="font-bold text-amber-400">0</span></div>
+            <div class="bg-slate-900 px-3 py-2 rounded border border-slate-700">2/3 Majority: <span id="stat-twothirds" class="font-bold text-amber-400">0</span></div>
           </div>
         </div>
 
-        <!-- Speaker Input -->
-        <div class="flex gap-2 mb-4">
-          <input type="text" id="delegate-input" placeholder="Enter Country Name" class="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
-          <button onclick="addSpeaker()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded text-sm font-medium transition">Add</button>
+        <!-- Roll Call Table -->
+        <div class="overflow-x-auto max-h-96 overflow-y-auto">
+          <table class="w-full text-left text-sm border-collapse">
+            <thead class="sticky top-0 bg-slate-900 text-slate-400 text-xs uppercase border-b border-slate-700">
+              <tr>
+                <th class="py-2 px-3">Delegate / Member State</th>
+                <th class="py-2 px-3 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="rollcall-table-body" class="divide-y divide-slate-700/50"></tbody>
+          </table>
         </div>
+      </section>
 
-        <!-- Speaker List Queue -->
-        <ol id="gsl-list" class="space-y-2 max-h-48 overflow-y-auto pr-1 text-sm"></ol>
-      </div>
-
-      <button onclick="nextSpeaker()" class="w-full mt-4 py-2 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 rounded text-sm font-medium transition">Next Speaker</button>
-    </section>
-
-    <!-- MOTIONS & DISRUPTIVENESS -->
-    <section class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg flex flex-col justify-between">
-      <div>
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold text-slate-200">Motions</h2>
-          <button onclick="toggleSortOrder()" id="sort-btn" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-slate-300 transition">
-            Order: Most Disruptive
-          </button>
-        </div>
-
-        <!-- Motion Input Form -->
-        <div class="grid grid-cols-1 gap-3 mb-6 bg-slate-900/50 p-4 rounded-lg border border-slate-700/40">
-          <input type="text" id="proposer-input" placeholder="Proposing Country" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
-          
-          <select id="type-input" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-slate-300">
-            <option value="Unmoderated Caucus" data-rank="10">Unmoderated Caucus (Rank 10)</option>
-            <option value="Moderated Caucus" data-rank="8">Moderated Caucus (Rank 8)</option>
-            <option value="Consultation of Whole" data-rank="6">Consultation of Whole (Rank 6)</option>
-            <option value="Closure of Debate" data-rank="4">Closure of Debate (Rank 4)</option>
-            <option value="Adjournment of Meeting" data-rank="2">Adjournment of Meeting (Rank 2)</option>
-          </select>
-
-          <input type="text" id="topic-input" placeholder="Topic / Specs (e.g. 10m total, 45s speaking time)" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
-
-          <button onclick="addMotion()" class="bg-indigo-600 hover:bg-indigo-500 py-2 rounded text-sm font-medium transition">Submit Motion</button>
-        </div>
-
-        <!-- Motions Display -->
-        <ul id="motions-list" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-sm"></ul>
-      </div>
-    </section>
+    </div>
 
   </main>
 
   <script>
-    // --- STATE ---
-    let gsl = [];
-    let motions = [];
+    // --- PRESET DATA SETS ---
+    const PRESETS = {
+      UNSC: ["Algeria", "China", "Denmark", "France", "Greece", "Guyana", "Pakistan", "Panama", "Republic of Korea", "Russian Federation", "Sierra Leone", "Somalia", "Slovenia", "United Kingdom", "United States"],
+      ASEAN: ["Brunei Darussalam", "Cambodia", "Indonesia", "Laos", "Malaysia", "Myanmar", "Philippines", "Singapore", "Thailand", "Vietnam"],
+      EU: ["Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden"],
+      UNGA: ["Argentina", "Australia", "Brazil", "Canada", "China", "Egypt", "Ethiopia", "France", "Germany", "India", "Indonesia", "Iran", "Italy", "Japan", "Mexico", "Nigeria", "Pakistan", "Russian Federation", "Saudi Arabia", "South Africa", "South Korea", "Spain", "Turkey", "United Kingdom", "United States"]
+    };
+
+    // --- STATE MANAGEMENT ---
+    let roster = JSON.parse(localStorage.getItem('mun_roster')) || [];
+    let gsl = JSON.parse(localStorage.getItem('mun_gsl')) || [];
+    let motions = JSON.parse(localStorage.getItem('mun_motions')) || [];
     let isMostDisruptiveFirst = true;
-    
-    // Timer State
+
     let timerInterval = null;
     let defaultTime = 60;
     let timeRemaining = defaultTime;
 
-    // --- GSL LOGIC ---
-    function addSpeaker() {
-      const input = document.getElementById('delegate-input');
+    // --- INITIALIZATION ---
+    window.addEventListener('DOMContentLoaded', () => {
+      renderAll();
+    });
+
+    function saveData() {
+      localStorage.setItem('mun_roster', JSON.stringify(roster));
+      localStorage.setItem('mun_gsl', JSON.stringify(gsl));
+      localStorage.setItem('mun_motions', JSON.stringify(motions));
+    }
+
+    function renderAll() {
+      renderRollCall();
+      renderGSLDropdowns();
+      renderGSL();
+      renderMotions();
+      updateTimerDisplay();
+    }
+
+    // --- TAB SWITCHING ---
+    function switchTab(tabName) {
+      document.getElementById('tab-debate').classList.toggle('hidden', tabName !== 'debate');
+      document.getElementById('tab-rollcall').classList.toggle('hidden', tabName !== 'rollcall');
+
+      document.getElementById('tab-btn-debate').className = tabName === 'debate' 
+        ? "px-4 py-1.5 rounded text-sm font-medium bg-indigo-600 text-white transition"
+        : "px-4 py-1.5 rounded text-sm font-medium text-slate-400 hover:text-white transition";
+        
+      document.getElementById('tab-btn-rollcall').className = tabName === 'rollcall' 
+        ? "px-4 py-1.5 rounded text-sm font-medium bg-indigo-600 text-white transition"
+        : "px-4 py-1.5 rounded text-sm font-medium text-slate-400 hover:text-white transition";
+    }
+
+    // --- PRESET & ROSTER LOGIC ---
+    function loadPreset(key) {
+      const list = PRESETS[key];
+      if (!list) return;
+
+      roster = list.map(name => ({
+        name,
+        status: 'present' // Default to present on batch import
+      }));
+
+      gsl = [];
+      motions = [];
+      saveData();
+      renderAll();
+    }
+
+    function addCustomCountry() {
+      const input = document.getElementById('single-country-input');
       const name = input.value.trim();
       if (!name) return;
-      
-      gsl.push(name);
+
+      if (!roster.some(d => d.name.toLowerCase() === name.toLowerCase())) {
+        roster.push({ name, status: 'present' });
+        saveData();
+        renderAll();
+      }
       input.value = '';
+    }
+
+    function setDelegateStatus(name, status) {
+      const item = roster.find(d => d.name === name);
+      if (item) {
+        item.status = status;
+        saveData();
+        renderRollCall();
+        renderGSLDropdowns();
+      }
+    }
+
+    function clearAllData() {
+      if (confirm("Reset roster, GSL, and motions data?")) {
+        roster = [];
+        gsl = [];
+        motions = [];
+        localStorage.clear();
+        renderAll();
+      }
+    }
+
+    function renderRollCall() {
+      const tbody = document.getElementById('rollcall-table-body');
+      tbody.innerHTML = '';
+
+      let pCount = 0;
+      let pvCount = 0;
+
+      roster.sort((a, b) => a.name.localeCompare(b.name)).forEach(d => {
+        if (d.status === 'present') pCount++;
+        if (d.status === 'pv') pvCount++;
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/50";
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 font-medium text-slate-200">${d.name}</td>
+          <td class="py-2.5 px-3 text-center">
+            <div class="inline-flex rounded-md shadow-sm border border-slate-700" role="group">
+              <button onclick="setDelegateStatus('${d.name}', 'present')" class="px-3 py-1 text-xs font-medium rounded-l-md ${d.status === 'present' ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}">Present</button>
+              <button onclick="setDelegateStatus('${d.name}', 'pv')" class="px-3 py-1 text-xs font-medium ${d.status === 'pv' ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}">Present & Voting</button>
+              <button onclick="setDelegateStatus('${d.name}', 'absent')" class="px-3 py-1 text-xs font-medium rounded-r-md ${d.status === 'absent' ? 'bg-red-700 text-white' : 'bg-slate-900 text-slate-400 hover:bg-slate-800'}">Absent</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const totalAttending = pCount + pvCount;
+      document.getElementById('stat-present').textContent = pCount;
+      document.getElementById('stat-pv').textContent = pvCount;
+      document.getElementById('stat-total').textContent = totalAttending;
+      document.getElementById('tab-present-count').textContent = totalAttending;
+
+      document.getElementById('stat-maj').textContent = Math.floor(totalAttending / 2) + 1;
+      document.getElementById('stat-twothirds').textContent = Math.ceil((totalAttending * 2) / 3);
+    }
+
+    // --- GSL DROPDOWN POPULATION ---
+    function renderGSLDropdowns() {
+      const gslSelect = document.getElementById('gsl-select-input');
+      const proposerSelect = document.getElementById('proposer-input');
+
+      gslSelect.innerHTML = '<option value="">-- Select Country to Add to GSL --</option>';
+      proposerSelect.innerHTML = '<option value="">-- Proposing Country --</option>';
+
+      // Only show delegates marked present or present & voting
+      const activeDelegates = roster
+        .filter(d => d.status === 'present' || d.status === 'pv')
+        .map(d => d.name)
+        .sort();
+
+      activeDelegates.forEach(name => {
+        gslSelect.innerHTML += `<option value="${name}">${name}</option>`;
+        proposerSelect.innerHTML += `<option value="${name}">${name}</option>`;
+      });
+    }
+
+    // --- GSL LOGIC ---
+    function addSpeakerFromSelect() {
+      const select = document.getElementById('gsl-select-input');
+      const name = select.value;
+      if (!name) return;
+
+      gsl.push(name);
+      saveData();
       renderGSL();
+      select.value = '';
     }
 
     function renderGSL() {
@@ -120,6 +337,7 @@
 
     function nextSpeaker() {
       if (gsl.length > 0) gsl.shift();
+      saveData();
       resetTimer();
       renderGSL();
     }
@@ -164,7 +382,7 @@
 
     // --- MOTIONS LOGIC ---
     function addMotion() {
-      const proposer = document.getElementById('proposer-input').value.trim();
+      const proposer = document.getElementById('proposer-input').value;
       const typeSelect = document.getElementById('type-input');
       const type = typeSelect.value;
       const rank = parseInt(typeSelect.options[typeSelect.selectedIndex].dataset.rank);
@@ -173,6 +391,7 @@
       if (!proposer || !topic) return;
 
       motions.push({ id: Date.now(), proposer, type, rank, topic });
+      saveData();
       
       document.getElementById('proposer-input').value = '';
       document.getElementById('topic-input').value = '';
@@ -191,7 +410,6 @@
       const listEl = document.getElementById('motions-list');
       listEl.innerHTML = '';
 
-      // Sort by rank according to current toggle
       const sorted = [...motions].sort((a, b) => 
         isMostDisruptiveFirst ? b.rank - a.rank : a.rank - b.rank
       );
