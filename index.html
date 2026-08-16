@@ -131,8 +131,13 @@
           <div class="bg-white p-5 border border-slate-200 rounded-lg shadow-sm space-y-4">
             <div class="text-center space-y-1">
               <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Current Speaker</span>
-              <div id="gsl-current-speaker" class="text-xl font-bold text-slate-800">-- No Speaker --</div>
+              <div class="flex flex-col items-center justify-center py-2">
+                <span id="gsl-current-flag" class="text-6xl leading-none mb-2">🏳️</span>
+                <div id="gsl-current-speaker" class="text-2xl font-extrabold text-slate-900">-- No Speaker --</div>
+              </div>
             </div>
+
+            <!-- Timer Display -->
 
             <!-- Timer Display -->
             <div class="bg-slate-900 text-emerald-400 rounded-lg p-6 text-center font-mono text-5xl font-bold tracking-widest shadow-inner relative overflow-hidden" id="timer-box">
@@ -313,20 +318,9 @@
             </div>
           </div>
 
-          <!-- Roll Call Voting Table Grid -->
-          <div class="max-h-72 overflow-y-auto border border-slate-200 rounded">
-            <table class="w-full text-left border-collapse text-xs">
-              <thead class="bg-slate-100 sticky top-0 border-b border-slate-200 text-slate-600 uppercase text-[10px] tracking-wider">
-                <tr>
-                  <th class="p-2">Member State</th>
-                  <th class="p-2">Roll Call Status</th>
-                  <th class="p-2 text-center">Vote Choice</th>
-                </tr>
-              </thead>
-              <tbody id="voting-grid-tbody" class="divide-y divide-slate-200">
-                <!-- Dynamic Roll Call Voting Grid Rows -->
-              </tbody>
-            </table>
+          <!-- Roll Call Voting Grid -->
+          <div id="voting-grid-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-1 max-h-[500px] overflow-y-auto">
+          <!-- Dynamic Roll Call Voting Grid Cards -->
           </div>
 
           <!-- Live Voting Tallies -->
@@ -710,6 +704,7 @@
       if (gslQueue.length === 0) {
         currentGSLSpeaker = null;
         document.getElementById('gsl-current-speaker').textContent = "-- No Speaker --";
+        document.getElementById('gsl-current-flag').textContent = "🏳️";
         resetGSLTimer();
         return;
       }
@@ -717,7 +712,10 @@
       currentGSLSpeaker = gslQueue.shift();
       saveState();
       renderGSL();
+      
+      const speakerData = roster.find(d => d.name === currentGSLSpeaker);
       document.getElementById('gsl-current-speaker').textContent = currentGSLSpeaker;
+      document.getElementById('gsl-current-flag').textContent = getFlagEmoji(speakerData ? speakerData.code : '');
       resetGSLTimer();
     }
 
@@ -1028,35 +1026,34 @@
     }
 
     function renderVotingGrid() {
-      const tbody = document.getElementById('voting-grid-tbody');
-      tbody.innerHTML = '';
+      const container = document.getElementById('voting-grid-container');
+      container.innerHTML = '';
 
       const attending = roster.filter(d => d.status !== 'Absent');
 
       attending.forEach(d => {
         const currentVote = votingVotes[d.name] || 'NONE';
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50";
+        const card = document.createElement('div');
+        card.className = "p-3 border border-slate-200 rounded-lg bg-white shadow-sm flex flex-col justify-between space-y-2 hover:border-slate-300 transition";
 
-        tr.innerHTML = `
-          <td class="p-2 font-medium text-slate-800 text-xs">
-            ${getFlagEmoji(d.code)} ${d.name}
-          </td>
-          <td class="p-2 text-[11px] text-slate-500">
-            <span class="px-1.5 py-0.5 rounded ${d.status === 'Present & Voting' ? 'bg-indigo-100 text-indigo-800 font-bold' : 'bg-slate-100'}">${d.status}</span>
-          </td>
-          <td class="p-2 text-center">
-            <div class="inline-flex rounded-md shadow-sm text-[10px]" role="group">
-              <button onclick="setVote('${d.name}', 'YES')" class="px-2 py-0.5 rounded-l border ${currentVote === 'YES' ? 'bg-emerald-600 text-white font-bold border-emerald-600' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-300'}">Yes</button>
-              <button onclick="setVote('${d.name}', 'NO')" class="px-2 py-0.5 border-t border-b ${currentVote === 'NO' ? 'bg-rose-600 text-white font-bold border-rose-600' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-300'}">No</button>
-              <button onclick="setVote('${d.name}', 'ABSTAIN')" class="px-2 py-0.5 border-t border-b ${currentVote === 'ABSTAIN' ? 'bg-amber-500 text-white font-bold border-amber-500' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-300'}">Abstain</button>
-              <button onclick="setVote('${d.name}', 'PASS')" class="px-2 py-0.5 rounded-r border ${currentVote === 'PASS' ? 'bg-sky-500 text-white font-bold border-sky-500' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-300'}">Pass</button>
-            </div>
-          </td>
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-slate-800 text-xs truncate" title="${d.name}">
+              ${getFlagEmoji(d.code)} ${d.name}
+            </span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded ${d.status === 'Present & Voting' ? 'bg-indigo-100 text-indigo-800 font-bold' : 'bg-slate-100 text-slate-600'}">${d.status}</span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-1 text-[10px]" role="group">
+            <button onclick="setVote('${d.name}', 'YES')" class="py-1 rounded border text-center transition ${currentVote === 'YES' ? 'bg-emerald-600 text-white font-bold border-emerald-600' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-300'}">Yes</button>
+            <button onclick="setVote('${d.name}', 'NO')" class="py-1 rounded border text-center transition ${currentVote === 'NO' ? 'bg-rose-600 text-white font-bold border-rose-600' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-300'}">No</button>
+            <button onclick="setVote('${d.name}', 'ABSTAIN')" class="py-1 rounded border text-center transition ${currentVote === 'ABSTAIN' ? 'bg-amber-500 text-white font-bold border-amber-500' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-300'}">Abs</button>
+            <button onclick="setVote('${d.name}', 'PASS')" class="py-1 rounded border text-center transition ${currentVote === 'PASS' ? 'bg-sky-500 text-white font-bold border-sky-500' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-300'}">Pass</button>
+          </div>
         `;
-        tbody.appendChild(tr);
+        container.appendChild(card);
       });
-
+      
       // Compute Live Tallies
       let yes = 0, no = 0, abstain = 0, pass = 0;
       Object.values(votingVotes).forEach(v => {
