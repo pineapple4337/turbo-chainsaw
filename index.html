@@ -3,78 +3,112 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PREPMUN Committee Suite</title>
+  <title>Committee Suite</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen p-6 font-sans">
+<body class="bg-slate-50 text-slate-800 min-h-screen p-6 font-sans text-base">
 
   <!-- TOP BAR -->
-  <header class="max-w-7xl mx-auto mb-6 border-b border-slate-200 pb-4 flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border">
+  <header class="max-w-7xl mx-auto mb-6 border-b border-slate-200 pb-4 flex flex-wrap justify-between items-center gap-4 bg-white p-5 rounded-xl shadow-sm border">
     <div>
-      <h1 class="text-2xl font-bold text-indigo-700 tracking-tight">PREPMUN Chairing Suite</h1>
-      <p class="text-xs text-slate-500 font-medium">Official ROP Compliant Engine (Light Mode)</p>
+      <h1 class="text-3xl font-bold text-indigo-700 tracking-tight">Chairing Suite</h1>
+      <p class="text-sm text-slate-500 font-medium">Official ROP Compliant Engine (Light Mode)</p>
     </div>
 
     <!-- TAB NAVIGATION -->
-    <nav class="flex gap-2 bg-slate-100 p-1 rounded-lg border border-slate-200">
-      <button onclick="switchTab('rollcall')" id="tab-btn-rollcall" class="px-4 py-1.5 rounded text-sm font-semibold bg-indigo-600 text-white shadow-sm transition">Roll Call (<span id="tab-present-count">0</span>)</button>
-      <button onclick="switchTab('debate')" id="tab-btn-debate" class="px-4 py-1.5 rounded text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">General Debate</button>
-      <button onclick="switchTab('motions')" id="tab-btn-motions" class="px-4 py-1.5 rounded text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">Motions & Precedence</button>
-      <button onclick="switchTab('documents')" id="tab-btn-documents" class="px-4 py-1.5 rounded text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">Resolutions & Voting</button>
+    <nav class="flex gap-2 bg-slate-100 p-1.5 rounded-lg border border-slate-200">
+      <button onclick="switchTab('rollcall')" id="tab-btn-rollcall" class="px-5 py-2 rounded-lg text-base font-semibold bg-indigo-600 text-white shadow-sm transition">Roll Call (<span id="tab-present-count">0</span>)</button>
+      <button onclick="switchTab('debate')" id="tab-btn-debate" class="px-5 py-2 rounded-lg text-base font-semibold text-slate-600 hover:text-indigo-600 transition">General Debate</button>
+      <button onclick="switchTab('motions')" id="tab-btn-motions" class="px-5 py-2 rounded-lg text-base font-semibold text-slate-600 hover:text-indigo-600 transition">Motions & Precedence</button>
+      <button onclick="switchTab('documents')" id="tab-btn-documents" class="px-5 py-2 rounded-lg text-base font-semibold text-slate-600 hover:text-indigo-600 transition">Resolutions & Voting</button>
     </nav>
   </header>
 
   <main class="max-w-7xl mx-auto">
+    
+    <!-- NOTIFICATION BANNER (REPLACES POPUPS) -->
+    <div id="ui-notification-banner" class="hidden max-w-7xl mx-auto mb-6 p-4 rounded-xl border flex items-center justify-between shadow-sm transition">
+      <span id="ui-notification-text" class="text-base font-semibold"></span>
+      <button onclick="dismissNotification()" class="ml-4 font-bold text-lg hover:opacity-75">&times;</button>
+    </div>
+
+    <!-- CONFIRMATION MODAL (REPLACES POPUPS) -->
+    <div id="ui-confirm-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
+        <h3 class="text-xl font-bold text-slate-800" id="confirm-modal-title">Confirm Action</h3>
+        <p class="text-base text-slate-600" id="confirm-modal-msg"></p>
+        <div class="flex justify-end gap-3 pt-2">
+          <button onclick="resolveConfirmModal(false)" class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-100">Cancel</button>
+          <button onclick="resolveConfirmModal(true)" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold">Proceed</button>
+        </div>
+      </div>
+    </div>
 
     <!-- TAB 1: ROLL CALL & QUORUM -->
     <div id="tab-rollcall" class="space-y-6">
       <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-800 mb-3">Load Committee Roster</h2>
+        <h2 class="text-xl font-bold text-slate-800 mb-4">Load Committee Roster</h2>
         <div class="flex flex-wrap gap-3 mb-4">
-          <button onclick="loadPreset('UNSC')" class="px-3.5 py-1.5 bg-slate-100 border border-slate-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 rounded text-sm font-medium transition">UN Security Council (15)</button>
-          <button onclick="loadPreset('ASEAN')" class="px-3.5 py-1.5 bg-slate-100 border border-slate-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 rounded text-sm font-medium transition">ASEAN (10)</button>
-          <button onclick="loadPreset('EU')" class="px-3.5 py-1.5 bg-slate-100 border border-slate-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 rounded text-sm font-medium transition">European Union (27)</button>
-          <button onclick="loadPreset('UNGA')" class="px-3.5 py-1.5 bg-slate-100 border border-slate-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 rounded text-sm font-medium transition">UNGA Sample (25)</button>
-          <button onclick="clearAllData()" class="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded text-sm font-medium transition ml-auto">Reset All Data</button>
+          <button onclick="loadPreset('UNSC')" class="px-4 py-2 bg-slate-100 border border-slate-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 rounded-lg text-base font-medium transition">UN Security Council (15)</button>
+          <button onclick="loadPreset('ASEAN')" class="px-4 py-2 bg-slate-100 border border-slate-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 rounded-lg text-base font-medium transition">ASEAN (10)</button>
+          <button onclick="loadPreset('EU')" class="px-4 py-2 bg-slate-100 border border-slate-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 rounded-lg text-base font-medium transition">European Union (27)</button>
+          <button onclick="loadPreset('UNGA')" class="px-4 py-2 bg-slate-100 border border-slate-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 rounded-lg text-base font-medium transition">UNGA Sample (25)</button>
+          
+          <div class="flex gap-2 ml-auto">
+            <button onclick="markAllStatus('present')" class="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-base font-semibold transition">Mark All Present</button>
+            <button onclick="markAllStatus('pv')" class="px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-base font-semibold transition">Mark All P&V</button>
+            <button onclick="requestClearAllData()" class="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-base font-medium transition">Reset All Data</button>
+          </div>
         </div>
         
         <!-- SEARCHABLE INPUT UX -->
-        <div class="relative flex flex-wrap gap-2 items-center">
-          <div class="relative flex-1 min-w-[240px]">
-            <input type="text" id="custom-country-search" placeholder="Type to search UN Member State..." oninput="handleSearchInput()" onkeydown="handleSearchKeyDown(event)" autocomplete="off" class="w-full bg-slate-50 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500 text-slate-800">
-            <div id="search-results-dropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-y-auto z-50 divide-y divide-slate-100"></div>
+        <div class="relative flex flex-wrap gap-3 items-center">
+          <div class="relative flex-1 min-w-[280px]">
+            <input type="text" id="custom-country-search" placeholder="Type to search UN Member State..." oninput="handleSearchInput()" onkeydown="handleSearchKeyDown(event)" autocomplete="off" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-base focus:outline-none focus:border-indigo-500 text-slate-800">
+            <div id="search-results-dropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50 divide-y divide-slate-100 text-base"></div>
           </div>
 
-          <select id="custom-country-type" class="bg-slate-50 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500 text-slate-700">
+          <select id="custom-country-type" class="bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-base focus:outline-none focus:border-indigo-500 text-slate-700">
             <option value="member">Member State</option>
             <option value="observer">Observer Entity</option>
           </select>
-          <button onclick="addSelectedEntity()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded text-sm font-medium transition">Add Entity</button>
+          <button onclick="addSelectedEntity()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg text-base font-medium transition">Add Entity</button>
         </div>
       </section>
 
-      <!-- PREPMUN STATS READOUT -->
+      <!-- STATS READOUT -->
       <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
         <div class="flex flex-wrap justify-between items-center mb-4 pb-4 border-b border-slate-100 gap-4">
-          <h2 class="text-lg font-bold text-slate-800">Roll Call & Voting Calculations</h2>
+          <h2 class="text-xl font-bold text-slate-800">Roll Call & Voting Calculations</h2>
           
-          <div class="flex flex-wrap gap-3 text-xs">
-            <div class="bg-slate-100 px-3 py-2 rounded border border-slate-200">Quorum (1/3 Members): <span id="stat-quorum" class="font-bold text-indigo-600">0</span></div>
-            <div class="bg-slate-100 px-3 py-2 rounded border border-slate-200">Present: <span id="stat-present" class="font-bold text-slate-700">0</span></div>
-            <div class="bg-slate-100 px-3 py-2 rounded border border-slate-200">P&V: <span id="stat-pv" class="font-bold text-slate-700">0</span></div>
-            <div class="bg-slate-100 px-3 py-2 rounded border border-slate-200">Simple Majority (>50%): <span id="stat-maj" class="font-bold text-amber-600">0</span></div>
-            <div class="bg-slate-100 px-3 py-2 rounded border border-slate-200">2/3 Majority (Substantive): <span id="stat-twothirds" class="font-bold text-emerald-600">0</span></div>
+          <div class="flex flex-wrap gap-3 text-sm">
+            <div class="bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200">Quorum (1/3 Members): <span id="stat-quorum" class="font-bold text-indigo-600">0</span></div>
+            <div class="bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200">Present: <span id="stat-present" class="font-bold text-slate-700">0</span></div>
+            <div class="bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200">P&V: <span id="stat-pv" class="font-bold text-slate-700">0</span></div>
+            <div class="bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200">Simple Majority (>50%): <span id="stat-maj" class="font-bold text-amber-600">0</span></div>
+            <div class="bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200">2/3 Majority (Substantive): <span id="stat-twothirds" class="font-bold text-emerald-600">0</span></div>
           </div>
+        </div>
+
+        <!-- ROLL CALL GRID (INTERACTIVE VOTING CARDS) -->
+        <div class="mb-6">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-lg font-bold text-slate-700">Roll Call Voting Grid</h3>
+            <div id="substantive-majority-banner" class="hidden px-4 py-1.5 rounded-full text-sm font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+              ✓ Substantive Majority (2/3) Reached
+            </div>
+          </div>
+          <div id="rollcall-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
         </div>
 
         <!-- DYNAMICALLY EXPANDING TABLE -->
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm border-collapse">
-            <thead class="bg-slate-100 text-slate-600 text-xs uppercase border-b border-slate-200">
+          <table class="w-full text-left text-base border-collapse">
+            <thead class="bg-slate-100 text-slate-600 text-sm uppercase border-b border-slate-200">
               <tr>
-                <th class="py-2.5 px-3">Entity Name</th>
-                <th class="py-2.5 px-3">Type</th>
-                <th class="py-2.5 px-3 text-center">Status</th>
+                <th class="py-3 px-4">Entity Name</th>
+                <th class="py-3 px-4">Type</th>
+                <th class="py-3 px-4 text-center">Status</th>
               </tr>
             </thead>
             <tbody id="rollcall-table-body" class="divide-y divide-slate-100"></tbody>
@@ -87,58 +121,59 @@
     <div id="tab-debate" class="hidden grid grid-cols-1 md:grid-cols-3 gap-8">
       <section class="md:col-span-2 bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
         <div>
-          <h2 class="text-lg font-bold text-slate-800 mb-4">General Speakers List (GSL)</h2>
+          <h2 class="text-xl font-bold text-slate-800 mb-4">General Speakers List (GSL)</h2>
           
           <div class="bg-slate-50 rounded-xl p-6 text-center border border-slate-200 mb-6 shadow-inner">
-            <div id="gsl-current-speaker" class="text-indigo-600 text-base font-bold uppercase tracking-wide mb-1">No Speaker Recognised</div>
-            <div id="gsl-timer" class="text-6xl font-mono font-bold my-2 text-slate-800">01:30</div>
+            <div id="gsl-flag-container" class="text-6xl mb-2">🌐</div>
+            <div id="gsl-current-speaker" class="text-indigo-600 text-xl font-bold uppercase tracking-wide mb-1">No Speaker Recognised</div>
+            <div id="gsl-timer" class="text-7xl font-mono font-bold my-3 text-slate-800">01:30</div>
             
-            <div class="flex justify-center gap-2 mt-4">
-              <button onclick="toggleGslTimer()" id="gsl-timer-btn" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-sm transition">Start</button>
-              <button onclick="resetGslTimer()" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-semibold text-sm transition">Reset (90s)</button>
+            <div class="flex justify-center gap-3 mt-4">
+              <button onclick="toggleGslTimer()" id="gsl-timer-btn" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-base transition">Start</button>
+              <button onclick="resetGslTimer()" class="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-semibold text-base transition">Reset (90s)</button>
             </div>
           </div>
 
           <!-- YIELDING CONTROLS (Rule 4.2.1) -->
           <div class="bg-indigo-50/60 border border-indigo-100 rounded-lg p-4 mb-6">
-            <h3 class="text-xs font-bold uppercase text-indigo-700 mb-2">Yield Floor (Rule 4.2.1)</h3>
-            <div id="yield-warning" class="text-xs text-red-500 font-semibold hidden mb-2">Yields prohibited with &lt; 15 seconds remaining (Rule 4.2.1.4).</div>
-            <div class="flex flex-wrap gap-2">
-              <button onclick="yieldFloor('pois')" id="yield-poi-btn" class="px-3 py-1.5 bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-700 rounded text-xs font-medium transition">Yield to POIs</button>
-              <button onclick="yieldFloor('delegate')" id="yield-del-btn" class="px-3 py-1.5 bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-700 rounded text-xs font-medium transition">Yield to Delegate</button>
-              <button onclick="yieldFloor('dais')" class="px-3 py-1.5 bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-700 rounded text-xs font-medium transition">Yield to Dais</button>
+            <h3 class="text-sm font-bold uppercase text-indigo-700 mb-2">Yield Floor (Rule 4.2.1)</h3>
+            <div id="yield-warning" class="text-sm text-red-500 font-semibold hidden mb-2">Yields prohibited with &lt; 15 seconds remaining (Rule 4.2.1.4).</div>
+            <div class="flex flex-wrap gap-3">
+              <button onclick="yieldFloor('pois')" id="yield-poi-btn" class="px-4 py-2 bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold transition">Yield to POIs</button>
+              <button onclick="yieldFloor('delegate')" id="yield-del-btn" class="px-4 py-2 bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold transition">Yield to Delegate</button>
+              <button onclick="yieldFloor('dais')" class="px-4 py-2 bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold transition">Yield to Dais</button>
             </div>
           </div>
 
-          <div class="flex gap-2 mb-4">
-            <select id="gsl-select-input" class="flex-1 bg-slate-50 border border-slate-300 rounded px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-500"></select>
-            <button onclick="addSpeakerFromSelect()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm font-medium transition">Add to Queue</button>
+          <div class="flex gap-3 mb-4">
+            <select id="gsl-select-input" class="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-base text-slate-800 focus:outline-none focus:border-indigo-500"></select>
+            <button onclick="addSpeakerFromSelect()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-base font-medium transition">Add to Queue</button>
           </div>
 
-          <ol id="gsl-list" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-sm"></ol>
+          <ol id="gsl-list" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-base"></ol>
         </div>
 
-        <button onclick="nextGSLSpeaker()" class="w-full mt-6 py-2.5 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded-lg text-sm font-bold transition">Next Speaker</button>
+        <button onclick="nextGSLSpeaker()" class="w-full mt-6 py-3 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded-lg text-base font-bold transition">Next Speaker</button>
       </section>
 
       <!-- POINTS QUICK REFERENCE -->
       <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-800 mb-4">PREPMUN Points (Rule 4.4)</h2>
-        <div class="space-y-3 text-xs">
-          <div class="p-3 bg-slate-50 rounded border border-slate-200">
-            <strong class="text-indigo-700">Point of Personal Privilege (4.4.0.2):</strong> Audibility/environment. Only point that may interrupt a speaker.
+        <h2 class="text-xl font-bold text-slate-800 mb-4">Points Quick Reference (Rule 4.4)</h2>
+        <div class="space-y-4 text-sm">
+          <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <strong class="text-indigo-700 text-base">Point of Personal Privilege (4.4.0.2):</strong> Audibility/environment. Only point that may interrupt a speaker.
           </div>
-          <div class="p-3 bg-slate-50 rounded border border-slate-200">
-            <strong class="text-indigo-700">Point of Order (4.4.0.3):</strong> Dais procedural error. Raised between speeches.
+          <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <strong class="text-indigo-700 text-base">Point of Order (4.4.0.3):</strong> Dais procedural error. Raised between speeches.
           </div>
-          <div class="p-3 bg-slate-50 rounded border border-slate-200">
-            <strong class="text-indigo-700">Point of Parliamentary Inquiry (4.4.0.4):</strong> Clarify ROP with Dais. Raised between speeches.
+          <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <strong class="text-indigo-700 text-base">Point of Parliamentary Inquiry (4.4.0.4):</strong> Clarify ROP with Dais. Raised between speeches.
           </div>
-          <div class="p-3 bg-slate-50 rounded border border-slate-200">
-            <strong class="text-indigo-700">Right to Reply (4.4.0.1):</strong> Dignity/integrity compromised. Discretionary apology by speaker.
+          <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <strong class="text-indigo-700 text-base">Right to Reply (4.4.0.1):</strong> Dignity/integrity compromised. Discretionary apology by speaker.
           </div>
-          <div class="p-3 bg-slate-50 rounded border border-slate-200">
-            <strong class="text-indigo-700">Point of Information (4.4.0.5):</strong> Single concise question when speaker yields to POIs.
+          <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <strong class="text-indigo-700 text-base">Point of Information (4.4.0.5):</strong> Single concise question when speaker yields to POIs.
           </div>
         </div>
       </section>
@@ -147,17 +182,17 @@
     <!-- TAB 3: MOTIONS & PRECEDENCE (Rule 4.5) -->
     <div id="tab-motions" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8">
       <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-800 mb-4">Raise Motion</h2>
+        <h2 class="text-xl font-bold text-slate-800 mb-4">Raise Motion</h2>
         
-        <div class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+        <div class="space-y-4 bg-slate-50 p-5 rounded-xl border border-slate-200">
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Proposing Entity</label>
-            <select id="motion-proposer" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-500"></select>
+            <label class="block text-sm font-bold text-slate-600 mb-1">Proposing Entity</label>
+            <select id="motion-proposer" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-base text-slate-800 focus:outline-none focus:border-indigo-500"></select>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Motion Type (Strict Precedence Hierarchy)</label>
-            <select id="motion-type" onchange="toggleCaucusFields()" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-500">
+            <label class="block text-sm font-bold text-slate-600 mb-1">Motion Type (Strict Precedence Hierarchy)</label>
+            <select id="motion-type" onchange="toggleCaucusFields()" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-base text-slate-800 focus:outline-none focus:border-indigo-500">
               <option value="Adjourn/Suspend Debate" data-rank="100">Motion to Adjourn / Suspend Debate</option>
               <option value="Unmoderated Caucus" data-rank="90">Motion for an Unmoderated Caucus</option>
               <option value="Moderated Caucus" data-rank="80">Motion for a Moderated Caucus</option>
@@ -170,61 +205,61 @@
           </div>
 
           <div id="mod-caucus-specs" class="space-y-3">
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1">Total Duration (mins)</label>
-                <input type="number" id="mod-total-time" max="20" placeholder="Max 20m" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm">
+                <label class="block text-sm font-bold text-slate-600 mb-1">Total Duration (mins)</label>
+                <input type="number" id="mod-total-time" max="20" placeholder="Max 20m" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-base">
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1">Speaking Time (secs)</label>
-                <select id="mod-speak-time" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm">
+                <label class="block text-sm font-bold text-slate-600 mb-1">Speaking Time (secs)</label>
+                <select id="mod-speak-time" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-base">
                   <option value="60">60 seconds</option>
                   <option value="90">90 seconds</option>
                   <option value="120">120 seconds</option>
                 </select>
               </div>
             </div>
-            <input type="text" id="mod-topic" placeholder="Caucus Topic..." class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm">
+            <input type="text" id="mod-topic" placeholder="Caucus Topic..." class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-base">
           </div>
 
-          <button onclick="submitMotion()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg text-sm transition">Add Motion to Floor</button>
+          <button onclick="submitMotion()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-base transition">Add Motion to Floor</button>
         </div>
       </section>
 
       <!-- ACTIVE MOTIONS QUEUE -->
       <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-800 mb-4">Motions Floor (Sorted by Precedence Rule 4.5)</h2>
-        <ul id="motions-list" class="space-y-3 max-h-96 overflow-y-auto pr-1 text-sm"></ul>
+        <h2 class="text-xl font-bold text-slate-800 mb-4">Motions Floor (Sorted by Precedence Rule 4.5)</h2>
+        <ul id="motions-list" class="space-y-3 max-h-96 overflow-y-auto pr-1 text-base"></ul>
       </section>
     </div>
 
     <!-- TAB 4: RESOLUTIONS & SUBSTANTIVE VOTING (Section 4.6) -->
     <div id="tab-documents" class="hidden space-y-6">
       <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-800 mb-4">Draft Resolution Management</h2>
+        <h2 class="text-xl font-bold text-slate-800 mb-4">Draft Resolution Management</h2>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <input type="text" id="dr-title" placeholder="Resolution Code / Title (e.g., Draft Resolution 1.1)" class="bg-slate-50 border border-slate-300 rounded px-3 py-2 text-sm text-slate-800">
-          <input type="number" id="dr-clauses-count" placeholder="Total Operative Clauses Count" class="bg-slate-50 border border-slate-300 rounded px-3 py-2 text-sm text-slate-800">
+          <input type="text" id="dr-title" placeholder="Resolution Code / Title (e.g., Draft Resolution 1.1)" class="bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-base text-slate-800">
+          <input type="number" id="dr-clauses-count" placeholder="Total Operative Clauses Count" class="bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-base text-slate-800">
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Sponsors (Max 10% of committee)</label>
-            <select id="dr-sponsors" multiple class="w-full h-24 bg-slate-50 border border-slate-300 rounded p-2 text-xs text-slate-800"></select>
+            <label class="block text-sm font-bold text-slate-600 mb-1">Sponsors (Max 10% of committee)</label>
+            <select id="dr-sponsors" multiple class="w-full h-28 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-800"></select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Signatories (Min 20% total with Sponsors)</label>
-            <select id="dr-signatories" multiple class="w-full h-24 bg-slate-50 border border-slate-300 rounded p-2 text-xs text-slate-800"></select>
+            <label class="block text-sm font-bold text-slate-600 mb-1">Signatories (Min 20% total with Sponsors)</label>
+            <select id="dr-signatories" multiple class="w-full h-28 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-800"></select>
           </div>
         </div>
 
-        <button onclick="registerDraftResolution()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">Register Draft Resolution</button>
+        <button onclick="registerDraftResolution()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-base font-semibold transition">Register Draft Resolution</button>
       </section>
 
       <!-- ACTIVE RESOLUTIONS LIST -->
       <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-800 mb-4">Introduced Documents & Voting Procedure</h2>
+        <h2 class="text-xl font-bold text-slate-800 mb-4">Introduced Documents & Voting Procedure</h2>
         <div id="resolutions-list" class="space-y-4"></div>
       </section>
     </div>
@@ -323,6 +358,7 @@
 
     let focusedSearchIndex = -1;
     let filteredCountries = [];
+    let confirmCallback = null;
 
     // GSL Timer
     let gslInterval = null;
@@ -338,6 +374,36 @@
         }
       });
     });
+
+    // --- UI NOTIFICATION HELPER ---
+    function showNotification(message, isError = false) {
+      const banner = document.getElementById('ui-notification-banner');
+      const text = document.getElementById('ui-notification-text');
+      text.textContent = message;
+      banner.className = `max-w-7xl mx-auto mb-6 p-4 rounded-xl border flex items-center justify-between shadow-sm transition ${
+        isError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-indigo-50 border-indigo-200 text-indigo-700'
+      }`;
+      banner.classList.remove('hidden');
+    }
+
+    function dismissNotification() {
+      document.getElementById('ui-notification-banner').classList.add('hidden');
+    }
+
+    function askConfirmation(title, message, onConfirm) {
+      document.getElementById('confirm-modal-title').textContent = title;
+      document.getElementById('confirm-modal-msg').textContent = message;
+      confirmCallback = onConfirm;
+      document.getElementById('ui-confirm-modal').classList.remove('hidden');
+    }
+
+    function resolveConfirmModal(approved) {
+      document.getElementById('ui-confirm-modal').classList.add('hidden');
+      if (approved && confirmCallback) {
+        confirmCallback();
+      }
+      confirmCallback = null;
+    }
 
     function saveData() {
       localStorage.setItem('prep_roster', JSON.stringify(roster));
@@ -359,23 +425,23 @@
         document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
         const btn = document.getElementById(`tab-btn-${t}`);
         if (t === tabName) {
-          btn.className = "px-4 py-1.5 rounded text-sm font-semibold bg-indigo-600 text-white shadow-sm transition";
+          btn.className = "px-5 py-2 rounded-lg text-base font-semibold bg-indigo-600 text-white shadow-sm transition";
         } else {
-          btn.className = "px-4 py-1.5 rounded text-sm font-semibold text-slate-600 hover:text-indigo-600 transition";
+          btn.className = "px-5 py-2 rounded-lg text-base font-semibold text-slate-600 hover:text-indigo-600 transition";
         }
       });
     }
 
-    // --- ROLL CALL & QUORUM LOGIC (Section 1.3, 1.4, 4.1) ---
+    // --- ROLL CALL & QUORUM LOGIC ---
     function loadPreset(key) {
       const list = PRESETS[key];
       if (!list) return;
 
-      // Rule 2: Default to ABSENT
       roster = list.map(name => ({
         name,
         type: 'member',
-        status: 'absent'
+        status: 'absent',
+        vote: 'none' // 'none', 'yes', 'no', 'pass', 'abstain'
       }));
 
       gsl = [];
@@ -383,9 +449,34 @@
       resolutions = [];
       saveData();
       renderAll();
+      showNotification(`Loaded ${key} preset successfully.`);
     }
 
-    // SEARCH INPUT UX LOGIC (Rule 5)
+    function markAllStatus(status) {
+      roster.forEach(r => {
+        if (r.type === 'observer' && status === 'pv') return;
+        r.status = status;
+      });
+      saveData();
+      renderRollCall();
+      renderDropdowns();
+      showNotification(`Marked all eligible countries as ${status.toUpperCase()}.`);
+    }
+
+    function cycleVote(name) {
+      const entity = roster.find(r => r.name === name);
+      if (!entity) return;
+
+      const voteCycle = ['none', 'yes', 'no', 'pass', 'abstain'];
+      const currentIndex = voteCycle.indexOf(entity.vote || 'none');
+      const nextIndex = (currentIndex + 1) % voteCycle.length;
+      entity.vote = voteCycle[nextIndex];
+
+      saveData();
+      renderRollCall();
+    }
+
+    // SEARCH INPUT UX LOGIC
     function handleSearchInput() {
       const query = document.getElementById('custom-country-search').value.trim().toLowerCase();
       const dropdown = document.getElementById('search-results-dropdown');
@@ -400,11 +491,11 @@
       focusedSearchIndex = -1;
 
       if (filteredCountries.length === 0) {
-        dropdown.innerHTML = '<div class="p-2 text-xs text-slate-400">No matching Member State found</div>';
+        dropdown.innerHTML = '<div class="p-3 text-sm text-slate-400">No matching Member State found</div>';
       } else {
         dropdown.innerHTML = filteredCountries.map((c, i) => `
-          <div id="search-opt-${i}" onclick="selectSearchOption('${c.name}')" class="px-3 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center gap-2">
-            <span>${getFlagEmoji(c.name)}</span>
+          <div id="search-opt-${i}" onclick="selectSearchOption('${c.name}')" class="px-4 py-2.5 text-base text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center gap-3">
+            <span class="text-2xl">${getFlagEmoji(c.name)}</span>
             <span>${c.name}</span>
           </div>
         `).join('');
@@ -466,8 +557,7 @@
       if (!name) return;
 
       if (!roster.some(r => r.name.toLowerCase() === name.toLowerCase())) {
-        // Rule 2: Default status is 'absent'
-        roster.push({ name, type, status: 'absent' });
+        roster.push({ name, type, status: 'absent', vote: 'none' });
         saveData();
         renderAll();
       }
@@ -486,63 +576,106 @@
       }
     }
 
+    function requestClearAllData() {
+      askConfirmation("Reset All Data", "Are you sure you want to reset all committee data? This action cannot be undone.", () => {
+        clearAllData();
+      });
+    }
+
     function clearAllData() {
-      if (confirm("Reset committee state?")) {
-        roster = [];
-        gsl = [];
-        motions = [];
-        resolutions = [];
-        localStorage.clear();
-        renderAll();
-      }
+      roster = [];
+      gsl = [];
+      motions = [];
+      resolutions = [];
+      localStorage.clear();
+      renderAll();
+      showNotification("All committee data has been reset.");
     }
 
     function renderRollCall() {
       const tbody = document.getElementById('rollcall-table-body');
+      const grid = document.getElementById('rollcall-grid');
       tbody.innerHTML = '';
+      grid.innerHTML = '';
 
       let memberCount = 0;
       let presentCount = 0;
       let pvCount = 0;
+      let yesVotes = 0;
 
-      roster.sort((a,b) => a.name.localeCompare(b.name)).forEach(entity => {
+      const sortedRoster = [...roster].sort((a,b) => a.name.localeCompare(b.name));
+
+      sortedRoster.forEach(entity => {
         if (entity.type === 'member') memberCount++;
         if (entity.status === 'present') presentCount++;
         if (entity.status === 'pv') pvCount++;
+        if (entity.vote === 'yes') yesVotes++;
 
         const flag = getFlagEmoji(entity.name);
 
+        // Render Table Row
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 border-b border-slate-100";
         tr.innerHTML = `
-          <td class="py-2.5 px-3 font-semibold text-slate-800 flex items-center gap-2">
-            <span>${flag}</span>
-            <span>${entity.name}</span>
+          <td class="py-3 px-4 font-semibold text-slate-800 flex items-center gap-3">
+            <span class="text-3xl">${flag}</span>
+            <span class="text-base">${entity.name}</span>
           </td>
-          <td class="py-2.5 px-3 text-xs uppercase font-bold text-slate-400">${entity.type}</td>
-          <td class="py-2.5 px-3 text-center">
+          <td class="py-3 px-4 text-xs uppercase font-bold text-slate-400">${entity.type}</td>
+          <td class="py-3 px-4 text-center">
             <div class="inline-flex rounded-md border border-slate-200" role="group">
-              <button onclick="setStatus('${entity.name}', 'present')" class="px-3 py-1 text-xs font-semibold ${entity.status === 'present' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}">Present</button>
+              <button onclick="setStatus('${entity.name}', 'present')" class="px-3.5 py-1.5 text-xs font-semibold ${entity.status === 'present' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}">Present</button>
               ${entity.type === 'member' ? `
-                <button onclick="setStatus('${entity.name}', 'pv')" class="px-3 py-1 text-xs font-semibold ${entity.status === 'pv' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}">Present & Voting</button>
+                <button onclick="setStatus('${entity.name}', 'pv')" class="px-3.5 py-1.5 text-xs font-semibold ${entity.status === 'pv' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}">Present & Voting</button>
               ` : ''}
-              <button onclick="setStatus('${entity.name}', 'absent')" class="px-3 py-1 text-xs font-semibold ${entity.status === 'absent' ? 'bg-red-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}">Absent</button>
+              <button onclick="setStatus('${entity.name}', 'absent')" class="px-3.5 py-1.5 text-xs font-semibold ${entity.status === 'absent' ? 'bg-red-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}">Absent</button>
             </div>
           </td>
         `;
         tbody.appendChild(tr);
+
+        // Render Grid Card (Interactive Roll Call Vote)
+        const voteState = entity.vote || 'none';
+        let voteBg = "bg-slate-100 text-slate-600 border-slate-200";
+        let voteText = "Click to Vote";
+
+        if (voteState === 'yes') { voteBg = "bg-emerald-500 text-white border-emerald-600 font-bold"; voteText = "YES"; }
+        else if (voteState === 'no') { voteBg = "bg-red-500 text-white border-red-600 font-bold"; voteText = "NO"; }
+        else if (voteState === 'pass') { voteBg = "bg-amber-500 text-white border-amber-600 font-bold"; voteText = "PASS"; }
+        else if (voteState === 'abstain') { voteBg = "bg-slate-400 text-white border-slate-500 font-bold"; voteText = "ABSTAIN"; }
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col items-center justify-between shadow-sm text-center";
+        card.innerHTML = `
+          <div class="text-3xl mb-1">${flag}</div>
+          <div class="font-bold text-sm text-slate-800 line-clamp-1 mb-2">${entity.name}</div>
+          <button onclick="cycleVote('${entity.name}')" class="w-full py-2 px-1 rounded-lg border text-xs tracking-wider uppercase transition shadow-sm ${voteBg}">
+            ${voteText}
+          </button>
+        `;
+        grid.appendChild(card);
       });
 
       const totalAttending = presentCount + pvCount;
+      const twothirdsReq = Math.ceil((totalAttending * 2) / 3);
+
       document.getElementById('stat-quorum').textContent = Math.ceil(memberCount / 3);
       document.getElementById('stat-present').textContent = presentCount;
       document.getElementById('stat-pv').textContent = pvCount;
       document.getElementById('stat-maj').textContent = Math.floor(totalAttending / 2) + 1;
-      document.getElementById('stat-twothirds').textContent = Math.ceil((totalAttending * 2) / 3);
+      document.getElementById('stat-twothirds').textContent = twothirdsReq;
       document.getElementById('tab-present-count').textContent = totalAttending;
+
+      // Substantive Majority Reached Indicator
+      const majorityBanner = document.getElementById('substantive-majority-banner');
+      if (totalAttending > 0 && yesVotes >= twothirdsReq) {
+        majorityBanner.classList.remove('hidden');
+      } else {
+        majorityBanner.classList.add('hidden');
+      }
     }
 
-    // --- DEBATE & GSL LOGIC (Section 4.2) ---
+    // --- DEBATE & GSL LOGIC ---
     function renderDropdowns() {
       const gslSelect = document.getElementById('gsl-select-input');
       const proposerSelect = document.getElementById('motion-proposer');
@@ -577,20 +710,23 @@
     function renderGSL() {
       const listEl = document.getElementById('gsl-list');
       const speakerEl = document.getElementById('gsl-current-speaker');
+      const flagEl = document.getElementById('gsl-flag-container');
       listEl.innerHTML = '';
 
       if (gsl.length > 0) {
         const flag = getFlagEmoji(gsl[0]);
-        speakerEl.innerHTML = `Current: ${flag} ${gsl[0]}`;
+        flagEl.textContent = flag;
+        speakerEl.textContent = gsl[0];
       } else {
+        flagEl.textContent = '🌐';
         speakerEl.textContent = 'No Speaker Recognised';
       }
 
       gsl.slice(1).forEach((name, idx) => {
         const flag = getFlagEmoji(name);
         const li = document.createElement('li');
-        li.className = 'flex justify-between items-center bg-slate-100 px-3 py-2 rounded text-slate-700 border border-slate-200';
-        li.innerHTML = `<span>${idx + 2}. ${flag} ${name}</span>`;
+        li.className = 'flex justify-between items-center bg-slate-100 px-4 py-2.5 rounded-lg text-slate-700 border border-slate-200 text-base';
+        li.innerHTML = `<span class="flex items-center gap-3"><strong>${idx + 2}.</strong> <span class="text-2xl">${flag}</span> <span>${name}</span></span>`;
         listEl.appendChild(li);
       });
     }
@@ -655,7 +791,7 @@
 
     function yieldFloor(type) {
       if (gslTimeRemaining < 15 && (type === 'pois' || type === 'delegate')) return;
-      alert(`Floor yielded to ${type.toUpperCase()}. (Rule 4.2.1 enforced)`);
+      showNotification(`Floor yielded to ${type.toUpperCase()}. (Rule 4.2.1 enforced)`);
       if (type === 'dais') nextGSLSpeaker();
     }
 
@@ -666,7 +802,7 @@
       renderGSL();
     }
 
-    // --- MOTIONS & PRECEDENCE LOGIC (Section 3.1 & 4.5) ---
+    // --- MOTIONS & PRECEDENCE LOGIC ---
     function toggleCaucusFields() {
       const type = document.getElementById('motion-type').value;
       document.getElementById('mod-caucus-specs').style.display = (type === 'Moderated Caucus' || type === 'Unmoderated Caucus') ? 'block' : 'none';
@@ -684,13 +820,13 @@
         const speak = parseInt(document.getElementById('mod-speak-time').value);
         const topic = document.getElementById('mod-topic').value;
 
-        if (total > 20) { alert("Caucus max length is 20m (Rule 4.3.0.3)"); return; }
-        if ((total * 60) % speak !== 0) { alert("Total time must be divisible by speaking time (Rule 4.3.1.2)"); return; }
-        if ((total * 60) / speak < 3) { alert("Must allow minimum 3 speakers (Rule 4.3.1.2)"); return; }
+        if (total > 20) { showNotification("Caucus max length is 20m (Rule 4.3.0.3)", true); return; }
+        if ((total * 60) % speak !== 0) { showNotification("Total time must be divisible by speaking time (Rule 4.3.1.2)", true); return; }
+        if ((total * 60) / speak < 3) { showNotification("Must allow minimum 3 speakers (Rule 4.3.1.2)", true); return; }
         specs = `${total}m total, ${speak}s per speaker | Topic: ${topic}`;
       } else if (type === 'Unmoderated Caucus') {
         const total = parseInt(document.getElementById('mod-total-time').value);
-        if (total > 20) { alert("Caucus max length is 20m (Rule 4.3.0.3)"); return; }
+        if (total > 20) { showNotification("Caucus max length is 20m (Rule 4.3.0.3)", true); return; }
         specs = `${total}m total duration`;
       }
 
@@ -731,18 +867,20 @@
         const flag = getFlagEmoji(m.proposer);
 
         const li = document.createElement('li');
-        li.className = 'bg-slate-50 border border-slate-200 p-4 rounded-lg flex flex-col gap-2';
+        li.className = 'bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-col gap-2 shadow-sm text-base';
         li.innerHTML = `
           <div class="flex justify-between items-center">
-            <span class="font-bold text-indigo-700">${m.type}</span>
-            <span class="text-xs ${statusBg} px-2 py-0.5 rounded font-semibold">Precedence Rank ${m.rank}</span>
+            <span class="font-bold text-indigo-700 text-lg">${m.type}</span>
+            <span class="text-xs ${statusBg} px-2.5 py-1 rounded-full font-semibold">Precedence Rank ${m.rank}</span>
           </div>
-          <div class="text-xs text-slate-600">Proposer: <strong>${flag} ${m.proposer}</strong> ${m.specs ? `| ${m.specs}` : ''}</div>
-          <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 text-xs">
+          <div class="text-sm text-slate-600 flex items-center gap-2">
+            <span>Proposer:</span> <span class="text-xl">${flag}</span> <strong>${m.proposer}</strong> ${m.specs ? `| ${m.specs}` : ''}
+          </div>
+          <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 text-sm">
             <span class="font-semibold text-slate-500">${statusText}</span>
             <div class="flex gap-2">
-              <button onclick="voteMotion(${m.id}, 'second')" class="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded text-slate-700">Second (${m.seconds})</button>
-              <button onclick="voteMotion(${m.id}, 'object')" class="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded text-slate-700">Object (${m.objections})</button>
+              <button onclick="voteMotion(${m.id}, 'second')" class="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-slate-700">Second (${m.seconds})</button>
+              <button onclick="voteMotion(${m.id}, 'object')" class="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-slate-700">Object (${m.objections})</button>
             </div>
           </div>
         `;
@@ -750,7 +888,7 @@
       });
     }
 
-    // --- DOCUMENTS & RESOLUTIONS LOGIC (Section 4.6) ---
+    // --- DOCUMENTS & RESOLUTIONS LOGIC ---
     function registerDraftResolution() {
       const title = document.getElementById('dr-title').value.trim();
       const clausesCount = parseInt(document.getElementById('dr-clauses-count').value);
@@ -765,12 +903,12 @@
       const minThreshold = Math.ceil(totalMembers * 0.2);
 
       if (sponsors.length > maxSponsors) {
-        alert(`Sponsors exceed max limit of 10% (${maxSponsors} delegates) (Rule 4.6.3.5)`);
+        showNotification(`Sponsors exceed max limit of 10% (${maxSponsors} delegates) (Rule 4.6.3.5)`, true);
         return;
       }
 
       if ((sponsors.length + signatories.length) < minThreshold) {
-        alert(`Must have minimum 20% combined Sponsors/Signatories (${minThreshold} needed) (Rule 4.6.3.5)`);
+        showNotification(`Must have minimum 20% combined Sponsors/Signatories (${minThreshold} needed) (Rule 4.6.3.5)`, true);
         return;
       }
 
@@ -785,6 +923,7 @@
 
       saveData();
       renderResolutions();
+      showNotification(`Registered Draft Resolution "${title}".`);
     }
 
     function renderResolutions() {
@@ -793,19 +932,19 @@
 
       resolutions.forEach(dr => {
         const div = document.createElement('div');
-        div.className = 'bg-slate-50 border border-slate-200 p-5 rounded-xl flex flex-col gap-3';
+        div.className = 'bg-slate-50 border border-slate-200 p-5 rounded-xl flex flex-col gap-3 shadow-sm text-base';
         div.innerHTML = `
           <div class="flex justify-between items-center border-b border-slate-200 pb-2">
-            <h3 class="font-bold text-lg text-indigo-700">${dr.title}</h3>
-            <span class="text-xs font-bold bg-indigo-100 text-indigo-800 px-2.5 py-1 rounded-full">${dr.status}</span>
+            <h3 class="font-bold text-xl text-indigo-700">${dr.title}</h3>
+            <span class="text-xs font-bold bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full">${dr.status}</span>
           </div>
-          <div class="text-xs text-slate-600 space-y-1">
+          <div class="text-sm text-slate-600 space-y-1.5">
             <div><strong>Sponsors:</strong> ${dr.sponsors.map(s => `${getFlagEmoji(s)} ${s}`).join(', ')}</div>
             <div><strong>Signatories:</strong> ${dr.signatories.map(s => `${getFlagEmoji(s)} ${s}`).join(', ')}</div>
             <div><strong>Operative Clauses:</strong> ${dr.clausesCount}</div>
           </div>
           <div class="flex flex-wrap gap-2 pt-2">
-            <button onclick="executeVotingProcedure(${dr.id})" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold">Enter Substantive Vote (2/3 Req)</button>
+            <button onclick="executeVotingProcedure(${dr.id})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold">Enter Substantive Vote (2/3 Req)</button>
           </div>
         `;
         container.appendChild(div);
@@ -815,7 +954,7 @@
     function executeVotingProcedure(id) {
       const dr = resolutions.find(x => x.id === id);
       if (!dr) return;
-      alert(`Entering Direct Voting Procedure for ${dr.title} (Rule 4.6.5). Doors locked, note passing suspended. Requires 2/3 majority of present & voting members.`);
+      showNotification(`Entering Direct Voting Procedure for ${dr.title} (Rule 4.6.5). Doors locked, note passing suspended. Requires 2/3 majority of present & voting members.`);
     }
   </script>
 </body>
