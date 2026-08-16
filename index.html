@@ -26,6 +26,7 @@
           <button id="nav-gsl" onclick="switchTab('gsl')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-indigo-200 hover:text-white hover:bg-indigo-800">General Speakers List</button>
           <button id="nav-motions" onclick="switchTab('motions')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-indigo-200 hover:text-white hover:bg-indigo-800">Motions Floor</button>
           <button id="nav-resolutions" onclick="switchTab('resolutions')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-indigo-200 hover:text-white hover:bg-indigo-800">Resolutions & Voting</button>
+          <button id="nav-settings" onclick="switchTab('settings')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-indigo-200 hover:text-white hover:bg-indigo-800">Settings</button>
         </nav>
       </div>
     </header>
@@ -40,7 +41,7 @@
           <div class="flex flex-wrap items-center gap-2">
             <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Quick Presets:</span>
             <button onclick="loadPreset('UNSC')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-medium transition">UNSC (15)</button>
-            <button onclick="loadPreset('ASEAN')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-medium transition">ASEAN (10)</button>
+            <button onclick="loadPreset('ASEAN')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-medium transition">ASEAN (11)</button>
             <button onclick="loadPreset('EU')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-medium transition">EU (27)</button>
             <button onclick="loadPreset('UNGA')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-medium transition">UNGA Sample (25)</button>
             <button onclick="clearRoster()" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-xs font-medium transition">Clear Roster</button>
@@ -59,7 +60,11 @@
           <div class="lg:col-span-3 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
             <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
               <h2 class="font-semibold text-slate-800 text-xs tracking-wide uppercase">Committee Roster & Roll Call</h2>
-              <span id="roster-count" class="text-xs text-slate-500 font-medium">0 Delegates</span>
+              <div class="flex items-center space-x-2">
+                <button onclick="markAllStatus('Present')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded text-xs font-medium transition">Mark All Present</button>
+                <button onclick="markAllStatus('Present & Voting')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-xs font-medium transition">Mark All P & V</button>
+                <span id="roster-count" class="text-xs text-slate-500 font-medium ml-2">0 Delegates</span>
+              </div>
             </div>
             <div class="max-h-[500px] overflow-y-auto">
               <table class="w-full text-left border-collapse text-xs">
@@ -147,7 +152,7 @@
             <!-- Controls -->
             <div class="grid grid-cols-3 gap-2">
               <button id="btn-timer-start" onclick="toggleGSLTimer()" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold transition">Start</button>
-              <button onclick="pauseGSLTimer()" class="py-2 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-semibold transition">Pause</button>
+              <button onclick="nextGSLSpeaker()" class="py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold transition">Next</button>
               <button onclick="resetGSLTimer()" class="py-2 bg-slate-600 hover:bg-slate-700 text-white rounded text-xs font-semibold transition">Reset</button>
             </div>
 
@@ -160,14 +165,17 @@
             <!-- Yield Controls (Rule 4.2.1) -->
             <div id="yield-container" class="space-y-2 pt-2 border-t">
               <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Yield Rules (Rule 4.2.1)</span>
-              <div class="grid grid-cols-3 gap-1">
-                <button id="yield-chair" onclick="yieldTime('Chair')" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium transition">To Chair</button>
-                <button id="yield-points" onclick="yieldTime('Points')" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium transition">To POIs</button>
-                <button id="yield-delegate" onclick="yieldTime('Delegate')" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium transition">To Delegate</button>
+              <div class="grid grid-cols-2 gap-2">
+                <button id="yield-points" onclick="yieldToPOI()" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium transition">Yield to POIs</button>
+                <div class="flex gap-1">
+                  <select id="yield-delegate-select" class="w-full px-1 py-1 border rounded text-[10px] bg-white focus:outline-none">
+                    <option value="">Select Delegate...</option>
+                  </select>
+                  <button id="yield-delegate" onclick="yieldToDelegate()" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium transition whitespace-nowrap">Yield</button>
+                </div>
               </div>
               <p id="yield-warning" class="text-[10px] text-amber-600 hidden font-medium text-center">Yielding to POIs/Delegate disallowed under 15 seconds (Rule 4.2.1.4)</p>
             </div>
-          </div>
 
           <!-- Queue Management -->
           <div class="lg:col-span-2 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col justify-between overflow-hidden">
@@ -338,7 +346,12 @@
           </div>
         </div>
       </section>
-
+      <section id="tab-settings" class="hidden space-y-4">
+        <div class="bg-white p-6 border border-slate-200 rounded-lg shadow-sm">
+          <h2 class="font-bold text-slate-800 text-sm uppercase tracking-wide border-b pb-2 mb-4">Settings</h2>
+          <p class="text-xs text-slate-500">Configure committee rules, timer defaults, and system preferences.</p>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -450,18 +463,22 @@
 
     // --- NAVIGATION ---
     function switchTab(tabId) {
-      ['roster', 'gsl', 'motions', 'resolutions'].forEach(id => {
+      ['roster', 'gsl', 'motions', 'resolutions', 'settings'].forEach(id => {
         document.getElementById(`tab-${id}`).classList.add('hidden');
         const navBtn = document.getElementById(`nav-${id}`);
-        navBtn.classList.remove('bg-indigo-800', 'text-white');
-        navBtn.classList.add('text-indigo-200');
+        if (navBtn) {
+          navBtn.classList.remove('bg-indigo-800', 'text-white');
+          navBtn.classList.add('text-indigo-200');
+        }
       });
-
+    
       document.getElementById(`tab-${tabId}`).classList.remove('hidden');
       const activeNav = document.getElementById(`nav-${tabId}`);
-      activeNav.classList.add('bg-indigo-800', 'text-white');
-      activeNav.classList.remove('text-indigo-200');
-
+      if (activeNav) {
+        activeNav.classList.add('bg-indigo-800', 'text-white');
+        activeNav.classList.remove('text-indigo-200');
+      }
+    
       if (tabId === 'resolutions') {
         renderVotingGrid();
       }
@@ -498,6 +515,14 @@
       }
     }
 
+    function markAllStatus(status) {
+      roster.forEach(d => {
+        d.status = status;
+      });
+      saveState();
+      renderRoster();
+    }
+    
     function addDelegateToRoster(name, code) {
       if (roster.some(d => d.name === name)) return;
       roster.push({ name, code, status: 'Present' });
@@ -527,7 +552,7 @@
       if (preset === 'UNSC') {
         list = ["China", "France", "Russian Federation", "United Kingdom", "United States of America", "Algeria", "Ecuador", "Guyana", "Japan", "Republic of Korea", "Sierra Leone", "Slovenia", "Somalia", "Switzerland", "Denmark"];
       } else if (preset === 'ASEAN') {
-        list = ["Brunei Darussalam", "Cambodia", "Indonesia", "Laos", "Malaysia", "Myanmar", "Philippines", "Singapore", "Thailand", "Viet Nam"];
+        list = ["Brunei Darussalam", "Cambodia", "Indonesia", "Laos", "Malaysia", "Myanmar", "Philippines", "Singapore", "Thailand", "Timor-Leste", "Viet Nam"];
       } else if (preset === 'EU') {
         list = ["Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden"];
       } else if (preset === 'UNGA') {
@@ -627,6 +652,14 @@
       roster.filter(d => d.status !== 'Absent').forEach(d => {
         motionProp.innerHTML += `<option value="${d.name}">${d.name}</option>`;
       });
+
+      // Yield Delegate Dropdown
+      const yieldSelect = document.getElementById('yield-delegate-select');
+      if (yieldSelect) {
+        yieldSelect.innerHTML = '<option value="">Select Delegate...</option>';
+        roster.filter(d => d.status !== 'Absent').forEach(d => {
+          yieldSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+        });
 
       // Resolution Sponsors & Signatories
       const resSpon = document.getElementById('res-sponsors');
@@ -783,13 +816,22 @@
       }
     }
 
-    function yieldTime(target) {
-      if (!currentGSLSpeaker) {
-        alert("No active speaker to yield time.");
-        return;
-      }
-      alert(`${currentGSLSpeaker} yields remaining time (${gslTimeRemaining}s) to ${target}.`);
-      nextGSLSpeaker();
+    function yieldToPOI() {
+      if (!currentGSLSpeaker) return;
+      pauseGSLTimer();
+    }
+    
+    function yieldToDelegate() {
+      if (!currentGSLSpeaker) return;
+      const targetDelegate = document.getElementById('yield-delegate-select').value;
+      if (!targetDelegate) return;
+    
+      pauseGSLTimer();
+      currentGSLSpeaker = targetDelegate;
+      
+      const speakerData = roster.find(d => d.name === currentGSLSpeaker);
+      document.getElementById('gsl-current-speaker').textContent = currentGSLSpeaker;
+      document.getElementById('gsl-current-flag').textContent = getFlagEmoji(speakerData ? speakerData.code : '');
     }
 
     // --- TAB 3: MOTIONS FLOOR ---
