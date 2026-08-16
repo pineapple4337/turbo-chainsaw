@@ -1,961 +1,777 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Committee Suite</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUN Chair Director Prep Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .active-tab {
+            border-bottom: 2px solid #4f46e5;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen p-6 font-sans text-base">
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
 
-  <!-- TOP BAR -->
-  <header class="max-w-7xl mx-auto mb-6 border-b border-slate-200 pb-4 flex flex-wrap justify-between items-center gap-4 bg-white p-5 rounded-xl shadow-sm border">
-    <div>
-      <h1 class="text-3xl font-bold text-indigo-700 tracking-tight">Chairing Suite</h1>
-      <p class="text-sm text-slate-500 font-medium">Official ROP Compliant Engine (Light Mode)</p>
-    </div>
-
-    <!-- TAB NAVIGATION -->
-    <nav class="flex gap-2 bg-slate-100 p-1.5 rounded-lg border border-slate-200">
-      <button onclick="switchTab('rollcall')" id="tab-btn-rollcall" class="px-5 py-2 rounded-lg text-base font-semibold bg-indigo-600 text-white shadow-sm transition">Roll Call (<span id="tab-present-count">0</span>)</button>
-      <button onclick="switchTab('debate')" id="tab-btn-debate" class="px-5 py-2 rounded-lg text-base font-semibold text-slate-600 hover:text-indigo-600 transition">General Debate</button>
-      <button onclick="switchTab('motions')" id="tab-btn-motions" class="px-5 py-2 rounded-lg text-base font-semibold text-slate-600 hover:text-indigo-600 transition">Motions & Precedence</button>
-      <button onclick="switchTab('documents')" id="tab-btn-documents" class="px-5 py-2 rounded-lg text-base font-semibold text-slate-600 hover:text-indigo-600 transition">Resolutions & Voting</button>
-    </nav>
-  </header>
-
-  <main class="max-w-7xl mx-auto">
-    
-    <!-- NOTIFICATION BANNER (REPLACES POPUPS) -->
-    <div id="ui-notification-banner" class="hidden max-w-7xl mx-auto mb-6 p-4 rounded-xl border flex items-center justify-between shadow-sm transition">
-      <span id="ui-notification-text" class="text-base font-semibold"></span>
-      <button onclick="dismissNotification()" class="ml-4 font-bold text-lg hover:opacity-75">&times;</button>
-    </div>
-
-    <!-- CONFIRMATION MODAL (REPLACES POPUPS) -->
-    <div id="ui-confirm-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
-        <h3 class="text-xl font-bold text-slate-800" id="confirm-modal-title">Confirm Action</h3>
-        <p class="text-base text-slate-600" id="confirm-modal-msg"></p>
-        <div class="flex justify-end gap-3 pt-2">
-          <button onclick="resolveConfirmModal(false)" class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-100">Cancel</button>
-          <button onclick="resolveConfirmModal(true)" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold">Proceed</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 1: ROLL CALL & QUORUM -->
-    <div id="tab-rollcall" class="space-y-6">
-      <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h2 class="text-xl font-bold text-slate-800 mb-4">Load Committee Roster</h2>
-        <div class="flex flex-wrap gap-3 mb-4">
-          <button onclick="loadPreset('UNSC')" class="px-4 py-2 bg-slate-100 border border-slate-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 rounded-lg text-base font-medium transition">UN Security Council (15)</button>
-          <button onclick="loadPreset('ASEAN')" class="px-4 py-2 bg-slate-100 border border-slate-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 rounded-lg text-base font-medium transition">ASEAN (10)</button>
-          <button onclick="loadPreset('EU')" class="px-4 py-2 bg-slate-100 border border-slate-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 rounded-lg text-base font-medium transition">European Union (27)</button>
-          <button onclick="loadPreset('UNGA')" class="px-4 py-2 bg-slate-100 border border-slate-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 rounded-lg text-base font-medium transition">UNGA Sample (25)</button>
-          
-          <div class="flex gap-2 ml-auto">
-            <button onclick="markAllStatus('present')" class="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-base font-semibold transition">Mark All Present</button>
-            <button onclick="markAllStatus('pv')" class="px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-base font-semibold transition">Mark All P&V</button>
-            <button onclick="requestClearAllData()" class="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-base font-medium transition">Reset All Data</button>
-          </div>
-        </div>
-        
-        <!-- SEARCHABLE INPUT UX -->
-        <div class="relative flex flex-wrap gap-3 items-center">
-          <div class="relative flex-1 min-w-[280px]">
-            <input type="text" id="custom-country-search" placeholder="Type to search UN Member State..." oninput="handleSearchInput()" onkeydown="handleSearchKeyDown(event)" autocomplete="off" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-base focus:outline-none focus:border-indigo-500 text-slate-800">
-            <div id="search-results-dropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50 divide-y divide-slate-100 text-base"></div>
-          </div>
-
-          <select id="custom-country-type" class="bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 text-base focus:outline-none focus:border-indigo-500 text-slate-700">
-            <option value="member">Member State</option>
-            <option value="observer">Observer Entity</option>
-          </select>
-          <button onclick="addSelectedEntity()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg text-base font-medium transition">Add Entity</button>
-        </div>
-      </section>
-
-      <!-- STATS READOUT -->
-      <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <div class="flex flex-wrap justify-between items-center mb-4 pb-4 border-b border-slate-100 gap-4">
-          <h2 class="text-xl font-bold text-slate-800">Roll Call & Voting Calculations</h2>
-          
-          <div class="flex flex-wrap gap-3 text-sm">
-            <div class="bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200">Quorum (1/3 Members): <span id="stat-quorum" class="font-bold text-indigo-600">0</span></div>
-            <div class="bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200">Present: <span id="stat-present" class="font-bold text-slate-700">0</span></div>
-            <div class="bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200">P&V: <span id="stat-pv" class="font-bold text-slate-700">0</span></div>
-            <div class="bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200">Simple Majority (>50%): <span id="stat-maj" class="font-bold text-amber-600">0</span></div>
-            <div class="bg-slate-100 px-3.5 py-2 rounded-lg border border-slate-200">2/3 Majority (Substantive): <span id="stat-twothirds" class="font-bold text-emerald-600">0</span></div>
-          </div>
-        </div>
-
-        <!-- ROLL CALL GRID (INTERACTIVE VOTING CARDS) -->
-        <div class="mb-6">
-          <div class="flex justify-between items-center mb-3">
-            <h3 class="text-lg font-bold text-slate-700">Roll Call Voting Grid</h3>
-            <div id="substantive-majority-banner" class="hidden px-4 py-1.5 rounded-full text-sm font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-              ✓ Substantive Majority (2/3) Reached
+    <!-- Header & Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-600 text-white p-2 rounded-lg font-bold text-lg">MUN</div>
+                    <div>
+                        <h1 class="font-bold text-slate-900 text-base leading-tight">Chairing Director Suite</h1>
+                        <p class="text-xs text-slate-500">Rules of Procedure & Committee Console</p>
+                    </div>
+                </div>
+                <nav class="flex space-x-6 text-sm font-medium">
+                    <button onclick="switchTab('roster')" id="tab-roster" class="py-5 px-1 active-tab transition-colors">
+                        1. Roll Call & Roster
+                    </button>
+                    <button onclick="switchTab('gsl')" id="tab-gsl" class="py-5 px-1 text-slate-500 hover:text-slate-700 transition-colors">
+                        2. General Speakers List
+                    </button>
+                    <button onclick="switchTab('motions')" id="tab-motions" class="py-5 px-1 text-slate-500 hover:text-slate-700 transition-colors">
+                        3. Motions Floor
+                    </button>
+                    <button onclick="switchTab('resolutions')" id="tab-resolutions" class="py-5 px-1 text-slate-500 hover:text-slate-700 transition-colors">
+                        4. Resolutions & Voting
+                    </button>
+                </nav>
             </div>
-          </div>
-          <div id="rollcall-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
         </div>
+    </header>
 
-        <!-- DYNAMICALLY EXPANDING TABLE -->
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-base border-collapse">
-            <thead class="bg-slate-100 text-slate-600 text-sm uppercase border-b border-slate-200">
-              <tr>
-                <th class="py-3 px-4">Entity Name</th>
-                <th class="py-3 px-4">Type</th>
-                <th class="py-3 px-4 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody id="rollcall-table-body" class="divide-y divide-slate-100"></tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
 
-    <!-- TAB 2: GENERAL DEBATE & GSL -->
-    <div id="tab-debate" class="hidden grid grid-cols-1 md:grid-cols-3 gap-8">
-      <section class="md:col-span-2 bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
-        <div>
-          <h2 class="text-xl font-bold text-slate-800 mb-4">General Speakers List (GSL)</h2>
-          
-          <div class="bg-slate-50 rounded-xl p-6 text-center border border-slate-200 mb-6 shadow-inner">
-            <div id="gsl-flag-container" class="text-6xl mb-2">🌐</div>
-            <div id="gsl-current-speaker" class="text-indigo-600 text-xl font-bold uppercase tracking-wide mb-1">No Speaker Recognised</div>
-            <div id="gsl-timer" class="text-7xl font-mono font-bold my-3 text-slate-800">01:30</div>
+        <!-- TAB 1: ROLL CALL & ROSTER -->
+        <section id="sec-roster" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Preset & Add State Card -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="font-semibold text-slate-900 text-sm uppercase tracking-wider">Quick Setup Presets</h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="loadPreset('UNSC')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-medium text-left">UNSC (15)</button>
+                        <button onclick="loadPreset('ASEAN')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-medium text-left">ASEAN (10)</button>
+                        <button onclick="loadPreset('EU')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-medium text-left">EU (27)</button>
+                        <button onclick="loadPreset('UNGA')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-medium text-left">UNGA (25)</button>
+                    </div>
+
+                    <hr class="border-slate-100">
+
+                    <h2 class="font-semibold text-slate-900 text-sm uppercase tracking-wider">Add UN Member State</h2>
+                    <div class="relative">
+                        <input type="text" id="state-search-input" onkeyup="handleSearchInput(event)" placeholder="Search UN Member State..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <div id="search-dropdown" class="hidden absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-md shadow-lg z-20"></div>
+                    </div>
+                </div>
+
+                <!-- Roll Call Table -->
+                <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-semibold text-slate-900">Committee Roster (<span id="roster-count">0</span>)</h2>
+                        <button onclick="clearRoster()" class="text-xs text-red-600 hover:underline">Clear Roster</button>
+                    </div>
+
+                    <div class="overflow-x-auto border border-slate-100 rounded-lg">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-600 border-b border-slate-100 text-xs uppercase tracking-wider">
+                                <tr>
+                                    <th class="py-3 px-4">Flag</th>
+                                    <th class="py-3 px-4">Country</th>
+                                    <th class="py-3 px-4">Attendance Status</th>
+                                    <th class="py-3 px-4 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roster-table-body" class="divide-y divide-slate-100">
+                                <tr>
+                                    <td colspan="4" class="py-8 text-center text-slate-400 italic">No member states added. Load a preset or search above.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: GENERAL SPEAKERS LIST -->
+        <section id="sec-gsl" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Speaker Controls & Active Speaker -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-5">
+                    <h2 class="font-semibold text-slate-900">Active Speaker Console</h2>
+                    
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center space-y-2">
+                        <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">On the Floor</span>
+                        <div id="gsl-current-flag" class="text-4xl">🇺🇳</div>
+                        <div id="gsl-current-name" class="font-bold text-lg text-slate-800">No Active Speaker</div>
+                        <div id="gsl-timer-display" class="font-mono text-3xl font-bold text-indigo-600">01:30</div>
+                    </div>
+
+                    <!-- Timer Action Buttons -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="startGslTimer()" class="py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-md">Start</button>
+                        <button onclick="pauseGslTimer()" class="py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-md">Pause</button>
+                        <button onclick="resetGslTimer()" class="py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-md">Reset</button>
+                    </div>
+
+                    <!-- Yield Controls (Rule 4.2.1.4) -->
+                    <div class="space-y-2 pt-2 border-t border-slate-100">
+                        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Yield Options (Rule 4.2.1)</span>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button id="btn-yield-chair" onclick="yieldTime('Chair')" class="py-2 px-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-md">To Chair</button>
+                            <button id="btn-yield-pois" onclick="yieldTime('POIs')" class="py-2 px-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-md">To POIs</button>
+                            <button id="btn-yield-delegate" onclick="yieldTime('Delegate')" class="py-2 px-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-md">To Delegate</button>
+                        </div>
+                        <p id="yield-warning" class="hidden text-xs text-amber-600 italic">Remaining time &lt; 15s. Yields to POIs or Delegates disabled (Rule 4.2.1.4).</p>
+                    </div>
+                </div>
+
+                <!-- GSL Queue Management -->
+                <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-semibold text-slate-900">General Speakers Queue</h2>
+                        <div class="flex gap-2">
+                            <select id="gsl-add-select" class="px-2 py-1 border border-slate-300 rounded-md text-sm">
+                                <option value="">Select country to add...</option>
+                            </select>
+                            <button onclick="addSelectedToGsl()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-md">Add to Queue</button>
+                        </div>
+                    </div>
+
+                    <ul id="gsl-queue-list" class="divide-y divide-slate-100 border border-slate-100 rounded-lg overflow-hidden">
+                        <li class="p-4 text-center text-slate-400 italic text-sm">The GSL queue is currently empty.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: MOTIONS FLOOR -->
+        <section id="sec-motions" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Motion Input Form -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="font-semibold text-slate-900">Propose New Motion</h2>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Proposing Country</label>
+                            <select id="motion-proposer" class="w-full text-sm border border-slate-300 rounded-md p-2 focus:ring-2 focus:ring-indigo-500"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Motion Type (Precedence Rank)</label>
+                            <select id="motion-type" class="w-full text-sm border border-slate-300 rounded-md p-2 focus:ring-2 focus:ring-indigo-500">
+                                <option value="Adjourn/Suspend (Rank 1)">Adjourn / Suspend Meeting (Rank 1)</option>
+                                <option value="Unmoderated Caucus (Rank 2)">Unmoderated Caucus (Rank 2)</option>
+                                <option value="Moderated Caucus (Rank 3)" selected>Moderated Caucus (Rank 3)</option>
+                                <option value="Introduce Draft Resolution (Rank 4)">Introduce Draft Resolution (Rank 4)</option>
+                                <option value="Amend Speaking Time (Rank 5)">Amend Speaking Time (Rank 5)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Total Duration (minutes)</label>
+                            <input type="number" id="motion-duration" value="10" min="1" max="20" class="w-full text-sm border border-slate-300 rounded-md p-2">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Individual Speaking Time (seconds)</label>
+                            <input type="number" id="motion-speaking-time" value="60" min="10" step="5" class="w-full text-sm border border-slate-300 rounded-md p-2">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Topic / Specific Purpose</label>
+                            <input type="text" id="motion-topic" placeholder="e.g. Discussing border security measures" class="w-full text-sm border border-slate-300 rounded-md p-2">
+                        </div>
+                        <button onclick="submitMotion()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-md transition-colors">Submit Motion to Floor</button>
+                    </div>
+                </div>
+
+                <!-- Motions List Ordered by Precedence -->
+                <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="font-semibold text-slate-900">Motions on the Floor</h2>
+                            <p class="text-xs text-slate-500">Automatically sorted by procedural precedence hierarchy (Rule 4.5)</p>
+                        </div>
+                        <button onclick="clearMotions()" class="text-xs text-red-600 hover:underline">Clear Motions</button>
+                    </div>
+
+                    <div id="motions-list-container" class="space-y-3">
+                        <div class="p-6 text-center text-slate-400 italic text-sm border border-slate-100 rounded-lg">No active motions on the floor.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: RESOLUTIONS & VOTING -->
+        <section id="sec-resolutions" class="hidden space-y-6">
             
-            <div class="flex justify-center gap-3 mt-4">
-              <button onclick="toggleGslTimer()" id="gsl-timer-btn" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-base transition">Start</button>
-              <button onclick="resetGslTimer()" class="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-semibold text-base transition">Reset (90s)</button>
+            <!-- Dynamic Rules Banner (Rule 4.6 Engine) -->
+            <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                    <span class="block text-xs text-indigo-600 uppercase font-semibold">Total Present</span>
+                    <span id="calc-total" class="text-xl font-bold text-slate-900">0</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-indigo-600 uppercase font-semibold">Quorum (Rule 4.6)</span>
+                    <span id="calc-quorum" class="text-xl font-bold text-slate-900">0</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-indigo-600 uppercase font-semibold">Simple Majority</span>
+                    <span id="calc-simple" class="text-xl font-bold text-slate-900">0</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-indigo-600 uppercase font-semibold">2/3 Substantive Majority</span>
+                    <span id="calc-substantive" class="text-xl font-bold text-indigo-600">0</span>
+                </div>
             </div>
-          </div>
 
-          <!-- YIELDING CONTROLS (Rule 4.2.1) -->
-          <div class="bg-indigo-50/60 border border-indigo-100 rounded-lg p-4 mb-6">
-            <h3 class="text-sm font-bold uppercase text-indigo-700 mb-2">Yield Floor (Rule 4.2.1)</h3>
-            <div id="yield-warning" class="text-sm text-red-500 font-semibold hidden mb-2">Yields prohibited with &lt; 15 seconds remaining (Rule 4.2.1.4).</div>
-            <div class="flex flex-wrap gap-3">
-              <button onclick="yieldFloor('pois')" id="yield-poi-btn" class="px-4 py-2 bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold transition">Yield to POIs</button>
-              <button onclick="yieldFloor('delegate')" id="yield-del-btn" class="px-4 py-2 bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold transition">Yield to Delegate</button>
-              <button onclick="yieldFloor('dais')" class="px-4 py-2 bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold transition">Yield to Dais</button>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Draft Resolution Form -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="font-semibold text-slate-900">Register Draft Resolution</h2>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Resolution Code/Title</label>
+                            <input type="text" id="res-code" placeholder="e.g. DR-1.1 (Climate Action)" class="w-full text-sm border border-slate-300 rounded-md p-2">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Main Sponsors (Max 10% of committee)</label>
+                            <div id="res-sponsors-container" class="max-h-32 overflow-y-auto border border-slate-200 rounded-md p-2 space-y-1"></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Signatories (Min 20% combined required)</label>
+                            <div id="res-signatories-container" class="max-h-32 overflow-y-auto border border-slate-200 rounded-md p-2 space-y-1"></div>
+                        </div>
+                        <button onclick="submitResolution()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-md">Validate & Add Resolution</button>
+                    </div>
+                </div>
+
+                <!-- Resolutions & Direct Voting Panel -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <h2 class="font-semibold text-slate-900">Registered Resolutions</h2>
+                        <div id="resolutions-list" class="space-y-3">
+                            <div class="p-6 text-center text-slate-400 italic text-sm border border-slate-100 rounded-lg">No draft resolutions registered yet.</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
 
-          <div class="flex gap-3 mb-4">
-            <select id="gsl-select-input" class="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-base text-slate-800 focus:outline-none focus:border-indigo-500"></select>
-            <button onclick="addSpeakerFromSelect()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-base font-medium transition">Add to Queue</button>
-          </div>
+            <!-- ROLL CALL VOTING GRID (MOVED TO THIS PAGE) -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <div>
+                        <h2 class="font-semibold text-slate-900">Substantive Roll Call Voting Grid</h2>
+                        <p class="text-xs text-slate-500">Record votes per country. Cyclic toggle: None → Yes → No → Pass → Abstain</p>
+                    </div>
+                    <div class="flex gap-2 text-xs font-semibold">
+                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded">Yes: <span id="vote-count-yes">0</span></span>
+                        <span class="px-2 py-1 bg-red-100 text-red-800 rounded">No: <span id="vote-count-no">0</span></span>
+                        <span class="px-2 py-1 bg-amber-100 text-amber-800 rounded">Pass: <span id="vote-count-pass">0</span></span>
+                        <span class="px-2 py-1 bg-slate-100 text-slate-700 rounded">Abstain: <span id="vote-count-abstain">0</span></span>
+                    </div>
+                </div>
 
-          <ol id="gsl-list" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-base"></ol>
-        </div>
+                <div id="voting-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    <div class="col-span-full text-center text-slate-400 italic py-4">No present delegates to vote. Add members in Roll Call & Roster tab.</div>
+                </div>
 
-        <button onclick="nextGSLSpeaker()" class="w-full mt-6 py-3 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded-lg text-base font-bold transition">Next Speaker</button>
-      </section>
-
-      <!-- POINTS QUICK REFERENCE -->
-      <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h2 class="text-xl font-bold text-slate-800 mb-4">Points Quick Reference (Rule 4.4)</h2>
-        <div class="space-y-4 text-sm">
-          <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <strong class="text-indigo-700 text-base">Point of Personal Privilege (4.4.0.2):</strong> Audibility/environment. Only point that may interrupt a speaker.
-          </div>
-          <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <strong class="text-indigo-700 text-base">Point of Order (4.4.0.3):</strong> Dais procedural error. Raised between speeches.
-          </div>
-          <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <strong class="text-indigo-700 text-base">Point of Parliamentary Inquiry (4.4.0.4):</strong> Clarify ROP with Dais. Raised between speeches.
-          </div>
-          <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <strong class="text-indigo-700 text-base">Right to Reply (4.4.0.1):</strong> Dignity/integrity compromised. Discretionary apology by speaker.
-          </div>
-          <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <strong class="text-indigo-700 text-base">Point of Information (4.4.0.5):</strong> Single concise question when speaker yields to POIs.
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <!-- TAB 3: MOTIONS & PRECEDENCE (Rule 4.5) -->
-    <div id="tab-motions" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8">
-      <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h2 class="text-xl font-bold text-slate-800 mb-4">Raise Motion</h2>
-        
-        <div class="space-y-4 bg-slate-50 p-5 rounded-xl border border-slate-200">
-          <div>
-            <label class="block text-sm font-bold text-slate-600 mb-1">Proposing Entity</label>
-            <select id="motion-proposer" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-base text-slate-800 focus:outline-none focus:border-indigo-500"></select>
-          </div>
-
-          <div>
-            <label class="block text-sm font-bold text-slate-600 mb-1">Motion Type (Strict Precedence Hierarchy)</label>
-            <select id="motion-type" onchange="toggleCaucusFields()" class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-base text-slate-800 focus:outline-none focus:border-indigo-500">
-              <option value="Adjourn/Suspend Debate" data-rank="100">Motion to Adjourn / Suspend Debate</option>
-              <option value="Unmoderated Caucus" data-rank="90">Motion for an Unmoderated Caucus</option>
-              <option value="Moderated Caucus" data-rank="80">Motion for a Moderated Caucus</option>
-              <option value="Introduce Draft Resolution" data-rank="70">Motion to Introduce Draft Resolution</option>
-              <option value="Introduce Unfriendly Amendment" data-rank="60">Motion to Introduce Unfriendly Amendment</option>
-              <option value="Table Draft Resolution" data-rank="50">Motion to Table Draft Resolution</option>
-              <option value="Direct Voting Procedure" data-rank="40">Motion to Move into Direct Voting Procedure</option>
-              <option value="Amend Speaking Time" data-rank="30">Motion to Amend Speaking Time</option>
-            </select>
-          </div>
-
-          <div id="mod-caucus-specs" class="space-y-3">
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-sm font-bold text-slate-600 mb-1">Total Duration (mins)</label>
-                <input type="number" id="mod-total-time" max="20" placeholder="Max 20m" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-base">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-slate-600 mb-1">Speaking Time (secs)</label>
-                <select id="mod-speak-time" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-base">
-                  <option value="60">60 seconds</option>
-                  <option value="90">90 seconds</option>
-                  <option value="120">120 seconds</option>
-                </select>
-              </div>
+                <!-- Live Substantive Vote Banner Output -->
+                <div id="vote-result-banner" class="hidden p-4 rounded-lg font-bold text-center text-sm"></div>
             </div>
-            <input type="text" id="mod-topic" placeholder="Caucus Topic..." class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-base">
-          </div>
 
-          <button onclick="submitMotion()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-base transition">Add Motion to Floor</button>
-        </div>
-      </section>
-
-      <!-- ACTIVE MOTIONS QUEUE -->
-      <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h2 class="text-xl font-bold text-slate-800 mb-4">Motions Floor (Sorted by Precedence Rule 4.5)</h2>
-        <ul id="motions-list" class="space-y-3 max-h-96 overflow-y-auto pr-1 text-base"></ul>
-      </section>
-    </div>
-
-    <!-- TAB 4: RESOLUTIONS & SUBSTANTIVE VOTING (Section 4.6) -->
-    <div id="tab-documents" class="hidden space-y-6">
-      <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h2 class="text-xl font-bold text-slate-800 mb-4">Draft Resolution Management</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <input type="text" id="dr-title" placeholder="Resolution Code / Title (e.g., Draft Resolution 1.1)" class="bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-base text-slate-800">
-          <input type="number" id="dr-clauses-count" placeholder="Total Operative Clauses Count" class="bg-slate-50 border border-slate-300 rounded-lg px-4 py-2.5 text-base text-slate-800">
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label class="block text-sm font-bold text-slate-600 mb-1">Sponsors (Max 10% of committee)</label>
-            <select id="dr-sponsors" multiple class="w-full h-28 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-800"></select>
-          </div>
-          <div>
-            <label class="block text-sm font-bold text-slate-600 mb-1">Signatories (Min 20% total with Sponsors)</label>
-            <select id="dr-signatories" multiple class="w-full h-28 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-800"></select>
-          </div>
-        </div>
-
-        <button onclick="registerDraftResolution()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-base font-semibold transition">Register Draft Resolution</button>
-      </section>
-
-      <!-- ACTIVE RESOLUTIONS LIST -->
-      <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h2 class="text-xl font-bold text-slate-800 mb-4">Introduced Documents & Voting Procedure</h2>
-        <div id="resolutions-list" class="space-y-4"></div>
-      </section>
-    </div>
-
-  </main>
-
-  <script>
-    // --- FLAG & COUNTRY DATA MAP ---
-    const UN_MEMBER_STATES = [
-      { name: "Afghanistan", code: "AF" }, { name: "Albania", code: "AL" }, { name: "Algeria", code: "DZ" },
-      { name: "Andorra", code: "AD" }, { name: "Angola", code: "AO" }, { name: "Antigua and Barbuda", code: "AG" },
-      { name: "Argentina", code: "AR" }, { name: "Armenia", code: "AM" }, { name: "Australia", code: "AU" },
-      { name: "Austria", code: "AT" }, { name: "Azerbaijan", code: "AZ" }, { name: "Bahamas", code: "BS" },
-      { name: "Bahrain", code: "BH" }, { name: "Bangladesh", code: "BD" }, { name: "Barbados", code: "BB" },
-      { name: "Belarus", code: "BY" }, { name: "Belgium", code: "BE" }, { name: "Belize", code: "BZ" },
-      { name: "Benin", code: "BJ" }, { name: "Bhutan", code: "BT" }, { name: "Bolivia", code: "BO" },
-      { name: "Bosnia and Herzegovina", code: "BA" }, { name: "Botswana", code: "BW" }, { name: "Brazil", code: "BR" },
-      { name: "Brunei Darussalam", code: "BN" }, { name: "Bulgaria", code: "BG" }, { name: "Burkina Faso", code: "BF" },
-      { name: "Burundi", code: "BI" }, { name: "Cabo Verde", code: "CV" }, { name: "Cambodia", code: "KH" },
-      { name: "Cameroon", code: "CM" }, { name: "Canada", code: "CA" }, { name: "Central African Republic", code: "CF" },
-      { name: "Chad", code: "TD" }, { name: "Chile", code: "CL" }, { name: "China", code: "CN" },
-      { name: "Colombia", code: "CO" }, { name: "Comoros", code: "KM" }, { name: "Congo", code: "CG" },
-      { name: "Costa Rica", code: "CR" }, { name: "Croatia", code: "HR" }, { name: "Cuba", code: "CU" },
-      { name: "Cyprus", code: "CY" }, { name: "Czechia", code: "CZ" }, { name: "Democratic Republic of the Congo", code: "CD" },
-      { name: "Denmark", code: "DK" }, { name: "Djibouti", code: "DJ" }, { name: "Dominica", code: "DM" },
-      { name: "Dominican Republic", code: "DO" }, { name: "Ecuador", code: "EC" }, { name: "Egypt", code: "EG" },
-      { name: "El Salvador", code: "SV" }, { name: "Equatorial Guinea", code: "GQ" }, { name: "Eritrea", code: "ER" },
-      { name: "Estonia", code: "EE" }, { name: "Eswatini", code: "SZ" }, { name: "Ethiopia", code: "ET" },
-      { name: "Fiji", code: "FJ" }, { name: "Finland", code: "FI" }, { name: "France", code: "FR" },
-      { name: "Gabon", code: "GA" }, { name: "Gambia", code: "GM" }, { name: "Georgia", code: "GE" },
-      { name: "Germany", code: "DE" }, { name: "Ghana", code: "GH" }, { name: "Greece", code: "GR" },
-      { name: "Grenada", code: "GD" }, { name: "Guatemala", code: "GT" }, { name: "Guinea", code: "GN" },
-      { name: "Guinea-Bissau", code: "GW" }, { name: "Guyana", code: "GY" }, { name: "Haiti", code: "HT" },
-      { name: "Honduras", code: "HN" }, { name: "Hungary", code: "HU" }, { name: "Iceland", code: "IS" },
-      { name: "India", code: "IN" }, { name: "Indonesia", code: "ID" }, { name: "Iran", code: "IR" },
-      { name: "Iraq", code: "IQ" }, { name: "Ireland", code: "IE" }, { name: "Israel", code: "IL" },
-      { name: "Italy", code: "IT" }, { name: "Jamaica", code: "JM" }, { name: "Japan", code: "JP" },
-      { name: "Jordan", code: "JO" }, { name: "Kazakhstan", code: "KZ" }, { name: "Kenya", code: "KE" },
-      { name: "Kiribati", code: "KI" }, { name: "Kuwait", code: "KW" }, { name: "Kyrgyzstan", code: "KG" },
-      { name: "Laos", code: "LA" }, { name: "Latvia", code: "LV" }, { name: "Lebanon", code: "LB" },
-      { name: "Lesotho", code: "LS" }, { name: "Liberia", code: "LR" }, { name: "Libya", code: "LY" },
-      { name: "Liechtenstein", code: "LI" }, { name: "Lithuania", code: "LT" }, { name: "Luxembourg", code: "LU" },
-      { name: "Madagascar", code: "MG" }, { name: "Malawi", code: "MW" }, { name: "Malaysia", code: "MY" },
-      { name: "Maldives", code: "MV" }, { name: "Mali", code: "ML" }, { name: "Malta", code: "MT" },
-      { name: "Marshall Islands", code: "MH" }, { name: "Mauritania", code: "MR" }, { name: "Mauritius", code: "MU" },
-      { name: "Mexico", code: "MX" }, { name: "Micronesia", code: "FM" }, { name: "Monaco", code: "MC" },
-      { name: "Mongolia", code: "MN" }, { name: "Montenegro", code: "ME" }, { name: "Morocco", code: "MA" },
-      { name: "Mozambique", code: "MZ" }, { name: "Myanmar", code: "MM" }, { name: "Namibia", code: "NA" },
-      { name: "Nauru", code: "NR" }, { name: "Nepal", code: "NP" }, { name: "Netherlands", code: "NL" },
-      { name: "New Zealand", code: "NZ" }, { name: "Nicaragua", code: "NI" }, { name: "Niger", code: "NE" },
-      { name: "Nigeria", code: "NG" }, { name: "North Macedonia", code: "MK" }, { name: "Norway", code: "NO" },
-      { name: "Oman", code: "OM" }, { name: "Pakistan", code: "PK" }, { name: "Palau", code: "PW" },
-      { name: "Panama", code: "PA" }, { name: "Papua New Guinea", code: "PG" }, { name: "Paraguay", code: "PY" },
-      { name: "Peru", code: "PE" }, { name: "Philippines", code: "PH" }, { name: "Poland", code: "PL" },
-      { name: "Portugal", code: "PT" }, { name: "Qatar", code: "QA" }, { name: "Republic of Korea", code: "KR" },
-      { name: "Republic of Moldova", code: "MD" }, { name: "Romania", code: "RO" }, { name: "Russian Federation", code: "RU" },
-      { name: "Rwanda", code: "RW" }, { name: "Saint Kitts and Nevis", code: "KN" }, { name: "Saint Lucia", code: "LC" },
-      { name: "Saint Vincent and the Grenadines", code: "VC" }, { name: "Samoa", code: "WS" }, { name: "San Marino", code: "SM" },
-      { name: "Sao Tome and Principe", code: "ST" }, { name: "Saudi Arabia", code: "SA" }, { name: "Senegal", code: "SN" },
-      { name: "Serbia", code: "RS" }, { name: "Seychelles", code: "SC" }, { name: "Sierra Leone", code: "SL" },
-      { name: "Singapore", code: "SG" }, { name: "Slovakia", code: "SK" }, { name: "Slovenia", code: "SI" },
-      { name: "Solomon Islands", code: "SB" }, { name: "Somalia", code: "SO" }, { name: "South Africa", code: "ZA" },
-      { name: "South Sudan", code: "SS" }, { name: "Spain", code: "ES" }, { name: "Sri Lanka", code: "LK" },
-      { name: "Sudan", code: "SD" }, { name: "Suriname", code: "SR" }, { name: "Sweden", code: "SE" },
-      { name: "Switzerland", code: "CH" }, { name: "Syrian Arab Republic", code: "SY" }, { name: "Tajikistan", code: "TJ" },
-      { name: "Thailand", code: "TH" }, { name: "Timor-Leste", code: "TL" }, { name: "Togo", code: "TG" },
-      { name: "Tonga", code: "TO" }, { name: "Trinidad and Tobago", code: "TT" }, { name: "Tunisia", code: "TN" },
-      { name: "Turkey", code: "TR" }, { name: "Turkmenistan", code: "TM" }, { name: "Tuvalu", code: "TV" },
-      { name: "Uganda", code: "UG" }, { name: "Ukraine", code: "UA" }, { name: "United Arab Emirates", code: "AE" },
-      { name: "United Kingdom", code: "GB" }, { name: "United Republic of Tanzania", code: "TZ" },
-      { name: "United States", code: "US" }, { name: "Uruguay", code: "UY" }, { name: "Uzbekistan", code: "UZ" },
-      { name: "Vanuatu", code: "VU" }, { name: "Venezuela", code: "VE" }, { name: "Vietnam", code: "VN" },
-      { name: "Yemen", code: "YE" }, { name: "Zambia", code: "ZM" }, { name: "Zimbabwe", code: "ZW" }
-    ];
-
-    function getFlagEmoji(countryName) {
-      const country = UN_MEMBER_STATES.find(c => c.name.toLowerCase() === countryName.toLowerCase());
-      if (!country || !country.code) return '🌐';
-      const codePoints = country.code.toUpperCase().split('').map(char => 127397 + char.charCodeAt(0));
-      return String.fromCodePoint(...codePoints);
-    }
-
-    // --- PRESET DATA SETS ---
-    const PRESETS = {
-      UNSC: ["Algeria", "China", "Denmark", "France", "Greece", "Guyana", "Pakistan", "Panama", "Republic of Korea", "Russian Federation", "Sierra Leone", "Somalia", "Slovenia", "United Kingdom", "United States"],
-      ASEAN: ["Brunei Darussalam", "Cambodia", "Indonesia", "Laos", "Malaysia", "Myanmar", "Philippines", "Singapore", "Thailand", "Vietnam"],
-      EU: ["Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden"],
-      UNGA: ["Argentina", "Australia", "Brazil", "Canada", "China", "Egypt", "Ethiopia", "France", "Germany", "India", "Indonesia", "Iran", "Italy", "Japan", "Mexico", "Nigeria", "Pakistan", "Russian Federation", "Saudi Arabia", "South Africa", "Republic of Korea", "Spain", "Turkey", "United Kingdom", "United States"]
-    };
-
-    // --- GLOBAL STATE ---
-    let roster = JSON.parse(localStorage.getItem('prep_roster')) || [];
-    let gsl = JSON.parse(localStorage.getItem('prep_gsl')) || [];
-    let motions = JSON.parse(localStorage.getItem('prep_motions')) || [];
-    let resolutions = JSON.parse(localStorage.getItem('prep_resolutions')) || [];
-
-    let focusedSearchIndex = -1;
-    let filteredCountries = [];
-    let confirmCallback = null;
-
-    // GSL Timer
-    let gslInterval = null;
-    let gslTimeRemaining = 90;
-
-    window.addEventListener('DOMContentLoaded', () => {
-      renderAll();
-      document.addEventListener('click', (e) => {
-        const container = document.getElementById('search-results-dropdown');
-        const input = document.getElementById('custom-country-search');
-        if (!container.contains(e.target) && e.target !== input) {
-          container.classList.add('hidden');
-        }
-      });
-    });
-
-    // --- UI NOTIFICATION HELPER ---
-    function showNotification(message, isError = false) {
-      const banner = document.getElementById('ui-notification-banner');
-      const text = document.getElementById('ui-notification-text');
-      text.textContent = message;
-      banner.className = `max-w-7xl mx-auto mb-6 p-4 rounded-xl border flex items-center justify-between shadow-sm transition ${
-        isError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-indigo-50 border-indigo-200 text-indigo-700'
-      }`;
-      banner.classList.remove('hidden');
-    }
-
-    function dismissNotification() {
-      document.getElementById('ui-notification-banner').classList.add('hidden');
-    }
-
-    function askConfirmation(title, message, onConfirm) {
-      document.getElementById('confirm-modal-title').textContent = title;
-      document.getElementById('confirm-modal-msg').textContent = message;
-      confirmCallback = onConfirm;
-      document.getElementById('ui-confirm-modal').classList.remove('hidden');
-    }
-
-    function resolveConfirmModal(approved) {
-      document.getElementById('ui-confirm-modal').classList.add('hidden');
-      if (approved && confirmCallback) {
-        confirmCallback();
-      }
-      confirmCallback = null;
-    }
-
-    function saveData() {
-      localStorage.setItem('prep_roster', JSON.stringify(roster));
-      localStorage.setItem('prep_gsl', JSON.stringify(gsl));
-      localStorage.setItem('prep_motions', JSON.stringify(motions));
-      localStorage.setItem('prep_resolutions', JSON.stringify(resolutions));
-    }
-
-    function renderAll() {
-      renderRollCall();
-      renderDropdowns();
-      renderGSL();
-      renderMotions();
-      renderResolutions();
-    }
-
-    function switchTab(tabName) {
-      ['rollcall', 'debate', 'motions', 'documents'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
-        const btn = document.getElementById(`tab-btn-${t}`);
-        if (t === tabName) {
-          btn.className = "px-5 py-2 rounded-lg text-base font-semibold bg-indigo-600 text-white shadow-sm transition";
-        } else {
-          btn.className = "px-5 py-2 rounded-lg text-base font-semibold text-slate-600 hover:text-indigo-600 transition";
-        }
-      });
-    }
-
-    // --- ROLL CALL & QUORUM LOGIC ---
-    function loadPreset(key) {
-      const list = PRESETS[key];
-      if (!list) return;
-
-      roster = list.map(name => ({
-        name,
-        type: 'member',
-        status: 'absent',
-        vote: 'none' // 'none', 'yes', 'no', 'pass', 'abstain'
-      }));
-
-      gsl = [];
-      motions = [];
-      resolutions = [];
-      saveData();
-      renderAll();
-      showNotification(`Loaded ${key} preset successfully.`);
-    }
-
-    function markAllStatus(status) {
-      roster.forEach(r => {
-        if (r.type === 'observer' && status === 'pv') return;
-        r.status = status;
-      });
-      saveData();
-      renderRollCall();
-      renderDropdowns();
-      showNotification(`Marked all eligible countries as ${status.toUpperCase()}.`);
-    }
-
-    function cycleVote(name) {
-      const entity = roster.find(r => r.name === name);
-      if (!entity) return;
-
-      const voteCycle = ['none', 'yes', 'no', 'pass', 'abstain'];
-      const currentIndex = voteCycle.indexOf(entity.vote || 'none');
-      const nextIndex = (currentIndex + 1) % voteCycle.length;
-      entity.vote = voteCycle[nextIndex];
-
-      saveData();
-      renderRollCall();
-    }
-
-    // SEARCH INPUT UX LOGIC
-    function handleSearchInput() {
-      const query = document.getElementById('custom-country-search').value.trim().toLowerCase();
-      const dropdown = document.getElementById('search-results-dropdown');
-      
-      if (!query) {
-        dropdown.classList.add('hidden');
-        filteredCountries = [];
-        return;
-      }
-
-      filteredCountries = UN_MEMBER_STATES.filter(c => c.name.toLowerCase().includes(query));
-      focusedSearchIndex = -1;
-
-      if (filteredCountries.length === 0) {
-        dropdown.innerHTML = '<div class="p-3 text-sm text-slate-400">No matching Member State found</div>';
-      } else {
-        dropdown.innerHTML = filteredCountries.map((c, i) => `
-          <div id="search-opt-${i}" onclick="selectSearchOption('${c.name}')" class="px-4 py-2.5 text-base text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center gap-3">
-            <span class="text-2xl">${getFlagEmoji(c.name)}</span>
-            <span>${c.name}</span>
-          </div>
-        `).join('');
-      }
-      dropdown.classList.remove('hidden');
-    }
-
-    function handleSearchKeyDown(e) {
-      const dropdown = document.getElementById('search-results-dropdown');
-      if (dropdown.classList.contains('hidden') || filteredCountries.length === 0) {
-        if (e.key === 'Enter') addSelectedEntity();
-        return;
-      }
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        focusedSearchIndex = Math.min(focusedSearchIndex + 1, filteredCountries.length - 1);
-        updateSearchHighlight();
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        focusedSearchIndex = Math.max(focusedSearchIndex - 1, 0);
-        updateSearchHighlight();
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        if (focusedSearchIndex >= 0 && focusedSearchIndex < filteredCountries.length) {
-          selectSearchOption(filteredCountries[focusedSearchIndex].name);
-        } else if (filteredCountries.length > 0) {
-          selectSearchOption(filteredCountries[0].name);
-        } else {
-          addSelectedEntity();
-        }
-      }
-    }
-
-    function updateSearchHighlight() {
-      filteredCountries.forEach((_, i) => {
-        const el = document.getElementById(`search-opt-${i}`);
-        if (el) {
-          if (i === focusedSearchIndex) {
-            el.classList.add('bg-indigo-50', 'text-indigo-600', 'font-semibold');
-            el.scrollIntoView({ block: 'nearest' });
-          } else {
-            el.classList.remove('bg-indigo-50', 'text-indigo-600', 'font-semibold');
-          }
-        }
-      });
-    }
-
-    function selectSearchOption(name) {
-      document.getElementById('custom-country-search').value = name;
-      document.getElementById('search-results-dropdown').classList.add('hidden');
-      addSelectedEntity();
-    }
-
-    function addSelectedEntity() {
-      const input = document.getElementById('custom-country-search');
-      const name = input.value.trim();
-      const type = document.getElementById('custom-country-type').value;
-      if (!name) return;
-
-      if (!roster.some(r => r.name.toLowerCase() === name.toLowerCase())) {
-        roster.push({ name, type, status: 'absent', vote: 'none' });
-        saveData();
-        renderAll();
-      }
-      input.value = '';
-      document.getElementById('search-results-dropdown').classList.add('hidden');
-    }
-
-    function setStatus(name, status) {
-      const entity = roster.find(r => r.name === name);
-      if (entity) {
-        if (entity.type === 'observer' && status === 'pv') return;
-        entity.status = status;
-        saveData();
-        renderRollCall();
-        renderDropdowns();
-      }
-    }
-
-    function requestClearAllData() {
-      askConfirmation("Reset All Data", "Are you sure you want to reset all committee data? This action cannot be undone.", () => {
-        clearAllData();
-      });
-    }
-
-    function clearAllData() {
-      roster = [];
-      gsl = [];
-      motions = [];
-      resolutions = [];
-      localStorage.clear();
-      renderAll();
-      showNotification("All committee data has been reset.");
-    }
-
-    function renderRollCall() {
-      const tbody = document.getElementById('rollcall-table-body');
-      const grid = document.getElementById('rollcall-grid');
-      tbody.innerHTML = '';
-      grid.innerHTML = '';
-
-      let memberCount = 0;
-      let presentCount = 0;
-      let pvCount = 0;
-      let yesVotes = 0;
-
-      const sortedRoster = [...roster].sort((a,b) => a.name.localeCompare(b.name));
-
-      sortedRoster.forEach(entity => {
-        if (entity.type === 'member') memberCount++;
-        if (entity.status === 'present') presentCount++;
-        if (entity.status === 'pv') pvCount++;
-        if (entity.vote === 'yes') yesVotes++;
-
-        const flag = getFlagEmoji(entity.name);
-
-        // Render Table Row
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 border-b border-slate-100";
-        tr.innerHTML = `
-          <td class="py-3 px-4 font-semibold text-slate-800 flex items-center gap-3">
-            <span class="text-3xl">${flag}</span>
-            <span class="text-base">${entity.name}</span>
-          </td>
-          <td class="py-3 px-4 text-xs uppercase font-bold text-slate-400">${entity.type}</td>
-          <td class="py-3 px-4 text-center">
-            <div class="inline-flex rounded-md border border-slate-200" role="group">
-              <button onclick="setStatus('${entity.name}', 'present')" class="px-3.5 py-1.5 text-xs font-semibold ${entity.status === 'present' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}">Present</button>
-              ${entity.type === 'member' ? `
-                <button onclick="setStatus('${entity.name}', 'pv')" class="px-3.5 py-1.5 text-xs font-semibold ${entity.status === 'pv' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}">Present & Voting</button>
-              ` : ''}
-              <button onclick="setStatus('${entity.name}', 'absent')" class="px-3.5 py-1.5 text-xs font-semibold ${entity.status === 'absent' ? 'bg-red-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}">Absent</button>
-            </div>
-          </td>
-        `;
-        tbody.appendChild(tr);
-
-        // Render Grid Card (Interactive Roll Call Vote)
-        const voteState = entity.vote || 'none';
-        let voteBg = "bg-slate-100 text-slate-600 border-slate-200";
-        let voteText = "Click to Vote";
-
-        if (voteState === 'yes') { voteBg = "bg-emerald-500 text-white border-emerald-600 font-bold"; voteText = "YES"; }
-        else if (voteState === 'no') { voteBg = "bg-red-500 text-white border-red-600 font-bold"; voteText = "NO"; }
-        else if (voteState === 'pass') { voteBg = "bg-amber-500 text-white border-amber-600 font-bold"; voteText = "PASS"; }
-        else if (voteState === 'abstain') { voteBg = "bg-slate-400 text-white border-slate-500 font-bold"; voteText = "ABSTAIN"; }
-
-        const card = document.createElement('div');
-        card.className = "bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col items-center justify-between shadow-sm text-center";
-        card.innerHTML = `
-          <div class="text-3xl mb-1">${flag}</div>
-          <div class="font-bold text-sm text-slate-800 line-clamp-1 mb-2">${entity.name}</div>
-          <button onclick="cycleVote('${entity.name}')" class="w-full py-2 px-1 rounded-lg border text-xs tracking-wider uppercase transition shadow-sm ${voteBg}">
-            ${voteText}
-          </button>
-        `;
-        grid.appendChild(card);
-      });
-
-      const totalAttending = presentCount + pvCount;
-      const twothirdsReq = Math.ceil((totalAttending * 2) / 3);
-
-      document.getElementById('stat-quorum').textContent = Math.ceil(memberCount / 3);
-      document.getElementById('stat-present').textContent = presentCount;
-      document.getElementById('stat-pv').textContent = pvCount;
-      document.getElementById('stat-maj').textContent = Math.floor(totalAttending / 2) + 1;
-      document.getElementById('stat-twothirds').textContent = twothirdsReq;
-      document.getElementById('tab-present-count').textContent = totalAttending;
-
-      // Substantive Majority Reached Indicator
-      const majorityBanner = document.getElementById('substantive-majority-banner');
-      if (totalAttending > 0 && yesVotes >= twothirdsReq) {
-        majorityBanner.classList.remove('hidden');
-      } else {
-        majorityBanner.classList.add('hidden');
-      }
-    }
-
-    // --- DEBATE & GSL LOGIC ---
-    function renderDropdowns() {
-      const gslSelect = document.getElementById('gsl-select-input');
-      const proposerSelect = document.getElementById('motion-proposer');
-      const drSponsors = document.getElementById('dr-sponsors');
-      const drSignatories = document.getElementById('dr-signatories');
-
-      gslSelect.innerHTML = '<option value="">-- Select Country --</option>';
-      proposerSelect.innerHTML = '<option value="">-- Select Proposer --</option>';
-      drSponsors.innerHTML = '';
-      drSignatories.innerHTML = '';
-
-      const active = roster.filter(r => r.status === 'present' || r.status === 'pv').map(r => r.name).sort();
-      active.forEach(name => {
-        const flag = getFlagEmoji(name);
-        gslSelect.innerHTML += `<option value="${name}">${flag} ${name}</option>`;
-        proposerSelect.innerHTML += `<option value="${name}">${flag} ${name}</option>`;
-        drSponsors.innerHTML += `<option value="${name}">${flag} ${name}</option>`;
-        drSignatories.innerHTML += `<option value="${name}">${flag} ${name}</option>`;
-      });
-    }
-
-    function addSpeakerFromSelect() {
-      const select = document.getElementById('gsl-select-input');
-      if (select.value) {
-        gsl.push(select.value);
-        saveData();
-        renderGSL();
-        select.value = '';
-      }
-    }
-
-    function renderGSL() {
-      const listEl = document.getElementById('gsl-list');
-      const speakerEl = document.getElementById('gsl-current-speaker');
-      const flagEl = document.getElementById('gsl-flag-container');
-      listEl.innerHTML = '';
-
-      if (gsl.length > 0) {
-        const flag = getFlagEmoji(gsl[0]);
-        flagEl.textContent = flag;
-        speakerEl.textContent = gsl[0];
-      } else {
-        flagEl.textContent = '🌐';
-        speakerEl.textContent = 'No Speaker Recognised';
-      }
-
-      gsl.slice(1).forEach((name, idx) => {
-        const flag = getFlagEmoji(name);
-        const li = document.createElement('li');
-        li.className = 'flex justify-between items-center bg-slate-100 px-4 py-2.5 rounded-lg text-slate-700 border border-slate-200 text-base';
-        li.innerHTML = `<span class="flex items-center gap-3"><strong>${idx + 2}.</strong> <span class="text-2xl">${flag}</span> <span>${name}</span></span>`;
-        listEl.appendChild(li);
-      });
-    }
-
-    function toggleGslTimer() {
-      const btn = document.getElementById('gsl-timer-btn');
-      if (gslInterval) {
-        clearInterval(gslInterval);
-        gslInterval = null;
-        btn.textContent = 'Start';
-      } else {
-        gslInterval = setInterval(() => {
-          gslTimeRemaining--;
-          updateGslTimerDisplay();
-          checkYields();
-          if (gslTimeRemaining <= 0) {
-            clearInterval(gslInterval);
-            gslInterval = null;
-            btn.textContent = 'Start';
-          }
-        }, 1000);
-        btn.textContent = 'Pause';
-      }
-    }
-
-    function resetGslTimer() {
-      if (gslInterval) {
-        clearInterval(gslInterval);
-        gslInterval = null;
-        document.getElementById('gsl-timer-btn').textContent = 'Start';
-      }
-      gslTimeRemaining = 90;
-      updateGslTimerDisplay();
-      checkYields();
-    }
-
-    function updateGslTimerDisplay() {
-      const mins = String(Math.floor(gslTimeRemaining / 60)).padStart(2, '0');
-      const secs = String(gslTimeRemaining % 60).padStart(2, '0');
-      document.getElementById('gsl-timer').textContent = `${mins}:${secs}`;
-    }
-
-    function checkYields() {
-      const warn = document.getElementById('yield-warning');
-      const poiBtn = document.getElementById('yield-poi-btn');
-      const delBtn = document.getElementById('yield-del-btn');
-      
-      if (gslTimeRemaining < 15) {
-        warn.classList.remove('hidden');
-        poiBtn.disabled = true;
-        delBtn.disabled = true;
-        poiBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        delBtn.classList.add('opacity-50', 'cursor-not-allowed');
-      } else {
-        warn.classList.add('hidden');
-        poiBtn.disabled = false;
-        delBtn.disabled = false;
-        poiBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        delBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-      }
-    }
-
-    function yieldFloor(type) {
-      if (gslTimeRemaining < 15 && (type === 'pois' || type === 'delegate')) return;
-      showNotification(`Floor yielded to ${type.toUpperCase()}. (Rule 4.2.1 enforced)`);
-      if (type === 'dais') nextGSLSpeaker();
-    }
-
-    function nextGSLSpeaker() {
-      if (gsl.length > 0) gsl.shift();
-      saveData();
-      resetGslTimer();
-      renderGSL();
-    }
-
-    // --- MOTIONS & PRECEDENCE LOGIC ---
-    function toggleCaucusFields() {
-      const type = document.getElementById('motion-type').value;
-      document.getElementById('mod-caucus-specs').style.display = (type === 'Moderated Caucus' || type === 'Unmoderated Caucus') ? 'block' : 'none';
-    }
-
-    function submitMotion() {
-      const proposer = document.getElementById('motion-proposer').value;
-      const typeSelect = document.getElementById('motion-type');
-      const type = typeSelect.value;
-      const rank = parseInt(typeSelect.options[typeSelect.selectedIndex].dataset.rank);
-      
-      let specs = "";
-      if (type === 'Moderated Caucus') {
-        const total = parseInt(document.getElementById('mod-total-time').value);
-        const speak = parseInt(document.getElementById('mod-speak-time').value);
-        const topic = document.getElementById('mod-topic').value;
-
-        if (total > 20) { showNotification("Caucus max length is 20m (Rule 4.3.0.3)", true); return; }
-        if ((total * 60) % speak !== 0) { showNotification("Total time must be divisible by speaking time (Rule 4.3.1.2)", true); return; }
-        if ((total * 60) / speak < 3) { showNotification("Must allow minimum 3 speakers (Rule 4.3.1.2)", true); return; }
-        specs = `${total}m total, ${speak}s per speaker | Topic: ${topic}`;
-      } else if (type === 'Unmoderated Caucus') {
-        const total = parseInt(document.getElementById('mod-total-time').value);
-        if (total > 20) { showNotification("Caucus max length is 20m (Rule 4.3.0.3)", true); return; }
-        specs = `${total}m total duration`;
-      }
-
-      if (!proposer) return;
-
-      motions.push({ id: Date.now(), proposer, type, rank, specs, seconds: 0, objections: 0 });
-      saveData();
-      renderMotions();
-    }
-
-    function voteMotion(id, action) {
-      const m = motions.find(x => x.id === id);
-      if (!m) return;
-      if (action === 'second') m.seconds++;
-      if (action === 'object') m.objections++;
-      saveData();
-      renderMotions();
-    }
-
-    function renderMotions() {
-      const listEl = document.getElementById('motions-list');
-      listEl.innerHTML = '';
-
-      const sorted = [...motions].sort((a,b) => b.rank - a.rank);
-
-      sorted.forEach(m => {
-        let statusText = "Needs Seconds";
-        let statusBg = "bg-amber-100 text-amber-800";
-
-        if (m.seconds > 0 && m.objections === 0) {
-          statusText = "Passes Automatically (Rule 3.1.0.4)";
-          statusBg = "bg-emerald-100 text-emerald-800";
-        } else if (m.seconds > 0 && m.objections > 0) {
-          statusText = "Requires Procedural Vote (Simple Majority)";
-          statusBg = "bg-indigo-100 text-indigo-800";
+        </section>
+
+    </main>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Official UN Member States Dataset with Flag Emojis
+        const UN_MEMBER_STATES = [
+            { name: "Afghanistan", flag: "🇦🇫" }, { name: "Albania", flag: "🇦🇱" }, { name: "Algeria", flag: "🇩🇿" },
+            { name: "Argentina", flag: "🇦🇷" }, { name: "Australia", flag: "🇦🇺" }, { name: "Austria", flag: "🇦🇹" },
+            { name: "Brazil", flag: "🇧🇷" }, { name: "Cambodia", flag: "🇰🇭" }, { name: "Canada", flag: "🇨🇦" },
+            { name: "China", flag: "🇨🇳" }, { name: "Egypt", flag: "🇪🇬" }, { name: "France", flag: "🇫🇷" },
+            { name: "Germany", flag: "🇩🇪" }, { name: "India", flag: "🇮🇳" }, { name: "Indonesia", flag: "🇮🇩" },
+            { name: "Italy", flag: "🇮🇹" }, { name: "Japan", flag: "🇯🇵" }, { name: "Lao PDR", flag: "🇱🇦" },
+            { name: "Malaysia", flag: "🇲🇾" }, { name: "Mexico", flag: "🇲🇽" }, { name: "Myanmar", flag: "🇲🇲" },
+            { name: "Nigeria", flag: "🇳🇬" }, { name: "Philippines", flag: "🇵🇭" }, { name: "Russian Federation", flag: "🇷🇺" },
+            { name: "Saudi Arabia", flag: "🇸🇦" }, { name: "Singapore", flag: "🇸🇬" }, { name: "South Africa", flag: "🇿🇦" },
+            { name: "South Korea", flag: "🇰🇷" }, { name: "Spain", flag: "🇪🇸" }, { name: "Thailand", flag: "🇹🇭" },
+            { name: "United Kingdom", flag: "🇬🇧" }, { name: "United States", flag: "🇺🇸" }, { name: "Viet Nam", flag: "🇻🇳" }
+        ];
+
+        // State Store
+        let roster = JSON.parse(localStorage.getItem('prep_roster')) || [];
+        let gslQueue = JSON.parse(localStorage.getItem('prep_gsl')) || [];
+        let motions = JSON.parse(localStorage.getItem('prep_motions')) || [];
+        let resolutions = JSON.parse(localStorage.getItem('prep_resolutions')) || [];
+        let currentSpeakerIndex = -1;
+        let gslTimer = null;
+        let gslTimeRemaining = 90;
+
+        // Initialize App
+        document.addEventListener("DOMContentLoaded", () => {
+            renderRoster();
+            renderGsl();
+            renderMotions();
+            renderResolutions();
+        });
+
+        // Tab Switching Engine
+        function switchTab(tabId) {
+            ['roster', 'gsl', 'motions', 'resolutions'].forEach(tab => {
+                document.getElementById(`sec-${tab}`).classList.add('hidden');
+                document.getElementById(`tab-${tab}`).classList.remove('active-tab');
+                document.getElementById(`tab-${tab}`).classList.add('text-slate-500');
+            });
+            document.getElementById(`sec-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.add('active-tab');
+            activeBtn.classList.remove('text-slate-500');
         }
 
-        const flag = getFlagEmoji(m.proposer);
+        // Roster Management
+        function saveRoster() {
+            localStorage.setItem('prep_roster', JSON.stringify(roster));
+            renderRoster();
+            renderGslSelects();
+            renderMotionProposerSelect();
+            renderResolutionCheckboxes();
+            renderVotingGrid();
+            updateRuleCalculations();
+        }
 
-        const li = document.createElement('li');
-        li.className = 'bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-col gap-2 shadow-sm text-base';
-        li.innerHTML = `
-          <div class="flex justify-between items-center">
-            <span class="font-bold text-indigo-700 text-lg">${m.type}</span>
-            <span class="text-xs ${statusBg} px-2.5 py-1 rounded-full font-semibold">Precedence Rank ${m.rank}</span>
-          </div>
-          <div class="text-sm text-slate-600 flex items-center gap-2">
-            <span>Proposer:</span> <span class="text-xl">${flag}</span> <strong>${m.proposer}</strong> ${m.specs ? `| ${m.specs}` : ''}
-          </div>
-          <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 text-sm">
-            <span class="font-semibold text-slate-500">${statusText}</span>
-            <div class="flex gap-2">
-              <button onclick="voteMotion(${m.id}, 'second')" class="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-slate-700">Second (${m.seconds})</button>
-              <button onclick="voteMotion(${m.id}, 'object')" class="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-slate-700">Object (${m.objections})</button>
-            </div>
-          </div>
-        `;
-        listEl.appendChild(li);
-      });
-    }
+        function addState(countryObj) {
+            if (roster.some(r => r.name === countryObj.name)) return;
+            roster.push({ ...countryObj, status: 'Present & Voting', vote: 'NONE' });
+            saveRoster();
+        }
 
-    // --- DOCUMENTS & RESOLUTIONS LOGIC ---
-    function registerDraftResolution() {
-      const title = document.getElementById('dr-title').value.trim();
-      const clausesCount = parseInt(document.getElementById('dr-clauses-count').value);
-      const sponsorsSelect = document.getElementById('dr-sponsors');
-      const signatoriesSelect = document.getElementById('dr-signatories');
+        function removeState(index) {
+            roster.splice(index, 1);
+            saveRoster();
+        }
 
-      const sponsors = Array.from(sponsorsSelect.selectedOptions).map(o => o.value);
-      const signatories = Array.from(signatoriesSelect.selectedOptions).map(o => o.value);
+        function toggleStatus(index) {
+            const statuses = ['Present & Voting', 'Present', 'Absent'];
+            const curr = roster[index].status;
+            const nextIndex = (statuses.indexOf(curr) + 1) % statuses.length;
+            roster[index].status = statuses[nextIndex];
+            saveRoster();
+        }
 
-      const totalMembers = roster.filter(r => r.type === 'member').length;
-      const maxSponsors = Math.max(2, Math.floor(totalMembers * 0.1));
-      const minThreshold = Math.ceil(totalMembers * 0.2);
+        function clearRoster() {
+            if (confirm("Clear all countries from roster?")) {
+                roster = [];
+                saveRoster();
+            }
+        }
 
-      if (sponsors.length > maxSponsors) {
-        showNotification(`Sponsors exceed max limit of 10% (${maxSponsors} delegates) (Rule 4.6.3.5)`, true);
-        return;
-      }
+        function loadPreset(presetKey) {
+            const presets = {
+                'UNSC': ["China", "France", "Russian Federation", "United Kingdom", "United States", "Algeria", "Japan"],
+                'ASEAN': ["Cambodia", "Indonesia", "Lao PDR", "Malaysia", "Myanmar", "Philippines", "Singapore", "Thailand", "Viet Nam"],
+                'EU': ["Austria", "France", "Germany", "Italy", "Spain"],
+                'UNGA': ["Afghanistan", "Albania", "Algeria", "Argentina", "Australia", "Brazil", "Canada", "China", "Egypt", "France", "Germany", "India", "Indonesia", "Italy", "Japan", "Mexico", "Nigeria", "Philippines", "Russian Federation", "Saudi Arabia", "Singapore", "South Africa", "Spain", "United Kingdom", "United States"]
+            };
+            const list = presets[presetKey] || [];
+            roster = list.map(name => {
+                const found = UN_MEMBER_STATES.find(s => s.name === name) || { name, flag: "🇺🇳" };
+                return { ...found, status: 'Present & Voting', vote: 'NONE' };
+            });
+            saveRoster();
+        }
 
-      if ((sponsors.length + signatories.length) < minThreshold) {
-        showNotification(`Must have minimum 20% combined Sponsors/Signatories (${minThreshold} needed) (Rule 4.6.3.5)`, true);
-        return;
-      }
+        function renderRoster() {
+            const tbody = document.getElementById('roster-table-body');
+            document.getElementById('roster-count').innerText = roster.length;
+            if (roster.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400 italic text-sm">No member states added. Load a preset or search above.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = roster.map((item, index) => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-4 text-xl">${item.flag}</td>
+                    <td class="py-3 px-4 font-medium text-slate-800">${item.name}</td>
+                    <td class="py-3 px-4">
+                        <button onclick="toggleStatus(${index})" class="px-2 py-1 rounded text-xs font-semibold ${
+                            item.status === 'Present & Voting' ? 'bg-indigo-100 text-indigo-800' :
+                            item.status === 'Present' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
+                        }">${item.status}</button>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="removeState(${index})" class="text-xs text-red-600 hover:underline">Remove</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
 
-      resolutions.push({
-        id: Date.now(),
-        title,
-        clausesCount,
-        sponsors,
-        signatories,
-        status: 'Introduced'
-      });
+        // Search Input Handling
+        function handleSearchInput(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const dropdown = document.getElementById('search-dropdown');
+            if (!query) { dropdown.classList.add('hidden'); return; }
+            
+            const matches = UN_MEMBER_STATES.filter(s => s.name.toLowerCase().includes(query));
+            if (matches.length === 0) { dropdown.classList.add('hidden'); return; }
 
-      saveData();
-      renderResolutions();
-      showNotification(`Registered Draft Resolution "${title}".`);
-    }
+            dropdown.innerHTML = matches.map(m => `
+                <div onclick="selectSearchMatch('${m.name}')" class="px-3 py-2 text-sm hover:bg-indigo-50 cursor-pointer flex items-center gap-2">
+                    <span>${m.flag}</span> <span>${m.name}</span>
+                </div>
+            `).join('');
+            dropdown.classList.remove('hidden');
+        }
 
-    function renderResolutions() {
-      const container = document.getElementById('resolutions-list');
-      container.innerHTML = '';
+        function selectSearchMatch(name) {
+            const match = UN_MEMBER_STATES.find(s => s.name === name);
+            if (match) addState(match);
+            document.getElementById('state-search-input').value = '';
+            document.getElementById('search-dropdown').classList.add('hidden');
+        }
 
-      resolutions.forEach(dr => {
-        const div = document.createElement('div');
-        div.className = 'bg-slate-50 border border-slate-200 p-5 rounded-xl flex flex-col gap-3 shadow-sm text-base';
-        div.innerHTML = `
-          <div class="flex justify-between items-center border-b border-slate-200 pb-2">
-            <h3 class="font-bold text-xl text-indigo-700">${dr.title}</h3>
-            <span class="text-xs font-bold bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full">${dr.status}</span>
-          </div>
-          <div class="text-sm text-slate-600 space-y-1.5">
-            <div><strong>Sponsors:</strong> ${dr.sponsors.map(s => `${getFlagEmoji(s)} ${s}`).join(', ')}</div>
-            <div><strong>Signatories:</strong> ${dr.signatories.map(s => `${getFlagEmoji(s)} ${s}`).join(', ')}</div>
-            <div><strong>Operative Clauses:</strong> ${dr.clausesCount}</div>
-          </div>
-          <div class="flex flex-wrap gap-2 pt-2">
-            <button onclick="executeVotingProcedure(${dr.id})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold">Enter Substantive Vote (2/3 Req)</button>
-          </div>
-        `;
-        container.appendChild(div);
-      });
-    }
+        // GSL Queue Logic
+        function renderGslSelects() {
+            const sel = document.getElementById('gsl-add-select');
+            sel.innerHTML = `<option value="">Select country to add...</option>` + 
+                roster.map(r => `<option value="${r.name}">${r.flag} ${r.name}</option>`).join('');
+        }
 
-    function executeVotingProcedure(id) {
-      const dr = resolutions.find(x => x.id === id);
-      if (!dr) return;
-      showNotification(`Entering Direct Voting Procedure for ${dr.title} (Rule 4.6.5). Doors locked, note passing suspended. Requires 2/3 majority of present & voting members.`);
-    }
-  </script>
+        function addSelectedToGsl() {
+            const val = document.getElementById('gsl-add-select').value;
+            if (!val || gslQueue.includes(val)) return;
+            gslQueue.push(val);
+            localStorage.setItem('prep_gsl', JSON.stringify(gslQueue));
+            renderGsl();
+        }
+
+        function removeFromGsl(index) {
+            gslQueue.splice(index, 1);
+            localStorage.setItem('prep_gsl', JSON.stringify(gslQueue));
+            renderGsl();
+        }
+
+        function nextGslSpeaker() {
+            if (gslQueue.length === 0) return;
+            const nextCountry = gslQueue.shift();
+            localStorage.setItem('prep_gsl', JSON.stringify(gslQueue));
+            
+            const stateObj = roster.find(r => r.name === nextCountry) || { name: nextCountry, flag: "🇺🇳" };
+            document.getElementById('gsl-current-flag').innerText = stateObj.flag;
+            document.getElementById('gsl-current-name').innerText = stateObj.name;
+            resetGslTimer();
+            renderGsl();
+        }
+
+        function renderGsl() {
+            const list = document.getElementById('gsl-queue-list');
+            if (gslQueue.length === 0) {
+                list.innerHTML = `<li class="p-4 text-center text-slate-400 italic text-sm">The GSL queue is currently empty.</li>`;
+                return;
+            }
+            list.innerHTML = gslQueue.map((c, i) => {
+                const state = roster.find(r => r.name === c) || { flag: "🇺🇳" };
+                return `
+                    <li class="p-3 flex justify-between items-center ${i === 0 ? 'bg-indigo-50/50' : ''}">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-bold text-slate-400">#${i + 1}</span>
+                            <span class="text-lg">${state.flag}</span>
+                            <span class="text-sm font-medium text-slate-800">${c}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${i === 0 ? `<button onclick="nextGslSpeaker()" class="px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">Recognize</button>` : ''}
+                            <button onclick="removeFromGsl(${i})" class="text-xs text-red-600 hover:underline">Remove</button>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        // Timer & Rule 4.2.1 Yield Enforcement
+        function startGslTimer() {
+            if (gslTimer) clearInterval(gslTimer);
+            gslTimer = setInterval(() => {
+                if (gslTimeRemaining > 0) {
+                    gslTimeRemaining--;
+                    updateGslTimerDisplay();
+                } else {
+                    clearInterval(gslTimer);
+                }
+            }, 1000);
+        }
+
+        function pauseGslTimer() { clearInterval(gslTimer); }
+
+        function resetGslTimer() {
+            clearInterval(gslTimer);
+            gslTimeRemaining = 90;
+            updateGslTimerDisplay();
+        }
+
+        function updateGslTimerDisplay() {
+            const mins = Math.floor(gslTimeRemaining / 60).toString().padStart(2, '0');
+            const secs = (gslTimeRemaining % 60).toString().padStart(2, '0');
+            document.getElementById('gsl-timer-display').innerText = `${mins}:${secs}`;
+            
+            // Rule 4.2.1.4 yield restriction enforcement (< 15 seconds)
+            const warning = document.getElementById('yield-warning');
+            const btnPois = document.getElementById('btn-yield-pois');
+            const btnDelegate = document.getElementById('btn-yield-delegate');
+
+            if (gslTimeRemaining < 15) {
+                warning.classList.remove('hidden');
+                btnPois.disabled = true;
+                btnDelegate.disabled = true;
+                btnPois.classList.add('opacity-50', 'cursor-not-allowed');
+                btnDelegate.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                warning.classList.add('hidden');
+                btnPois.disabled = false;
+                btnDelegate.disabled = false;
+                btnPois.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnDelegate.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function yieldTime(type) {
+            alert(`Time yielded to ${type}. Chairing node updated.`);
+            resetGslTimer();
+            nextGslSpeaker();
+        }
+
+        // Motions Precedence Hierarchy (Rule 4.5)
+        function renderMotionProposerSelect() {
+            const sel = document.getElementById('motion-proposer');
+            sel.innerHTML = roster.map(r => `<option value="${r.name}">${r.flag} ${r.name}</option>`).join('');
+        }
+
+        function submitMotion() {
+            const proposer = document.getElementById('motion-proposer').value;
+            const type = document.getElementById('motion-type').value;
+            const duration = parseInt(document.getElementById('motion-duration').value) || 0;
+            const speakingTime = parseInt(document.getElementById('motion-speaking-time').value) || 0;
+            const topic = document.getElementById('motion-topic').value;
+
+            if (!proposer || !topic) { alert("Please fill in all motion fields."); return; }
+
+            // Extract rank
+            const rankMatch = type.match(/Rank (\d+)/);
+            const rank = rankMatch ? parseInt(rankMatch[1]) : 99;
+
+            motions.push({ proposer, type, duration, speakingTime, topic, rank, votes: { second: false, objection: false } });
+            // Sort by precedence (rank 1 comes first)
+            motions.sort((a, b) => a.rank - b.rank);
+            
+            localStorage.setItem('prep_motions', JSON.stringify(motions));
+            renderMotions();
+        }
+
+        function clearMotions() {
+            motions = [];
+            localStorage.setItem('prep_motions', JSON.stringify(motions));
+            renderMotions();
+        }
+
+        function renderMotions() {
+            const container = document.getElementById('motions-list-container');
+            if (motions.length === 0) {
+                container.innerHTML = `<div class="p-6 text-center text-slate-400 italic text-sm border border-slate-100 rounded-lg">No active motions on the floor.</div>`;
+                return;
+            }
+
+            container.innerHTML = motions.map((m, i) => `
+                <div class="p-4 border border-slate-200 rounded-lg bg-slate-50 space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="inline-block px-2 py-0.5 bg-indigo-100 text-indigo-800 font-semibold text-xs rounded mb-1">Precedence Rank ${m.rank}</span>
+                            <h3 class="font-bold text-slate-900 text-sm">${m.type}</h3>
+                            <p class="text-xs text-slate-600">Proposed by <strong>${m.proposer}</strong> — "${m.topic}"</p>
+                        </div>
+                        <div class="text-right text-xs text-slate-500">
+                            <div>${m.duration} mins total</div>
+                            <div>${m.speakingTime}s per speaker</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-200">
+                        <div class="flex gap-2">
+                            <button onclick="toggleMotionFlag(${i}, 'second')" class="px-2 py-1 rounded border ${m.votes.second ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white border-slate-300'}">
+                                ${m.votes.second ? '✓ Seconded' : 'Add Second'}
+                            </button>
+                            <button onclick="toggleMotionFlag(${i}, 'objection')" class="px-2 py-1 rounded border ${m.votes.objection ? 'bg-red-600 text-white border-red-600' : 'bg-white border-slate-300'}">
+                                ${m.votes.objection ? '⚠ Objections' : 'Add Objection'}
+                            </button>
+                        </div>
+                        <span class="font-medium text-slate-700">
+                            Pass Condition: ${!m.votes.second ? 'Requires Second' : m.votes.objection ? 'Procedural Vote (Simple Majority)' : 'Passes Automatically'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleMotionFlag(index, type) {
+            motions[index].votes[type] = !motions[index].votes[type];
+            localStorage.setItem('prep_motions', JSON.stringify(motions));
+            renderMotions();
+        }
+
+        // Rule Engine Calculations (Rule 4.6)
+        function updateRuleCalculations() {
+            const attending = roster.filter(r => r.status !== 'Absent').length;
+            const quorum = Math.ceil(attending / 3);
+            const simpleMajority = Math.floor(attending / 2) + 1;
+            const substantiveMajority = Math.ceil((attending * 2) / 3);
+
+            document.getElementById('calc-total').innerText = attending;
+            document.getElementById('calc-quorum').innerText = quorum;
+            document.getElementById('calc-simple').innerText = simpleMajority;
+            document.getElementById('calc-substantive').innerText = substantiveMajority;
+        }
+
+        // Resolutions Setup
+        function renderResolutionCheckboxes() {
+            const spCont = document.getElementById('res-sponsors-container');
+            const sgCont = document.getElementById('res-signatories-container');
+            
+            const checkboxes = roster.map(r => `
+                <label class="flex items-center gap-2 text-xs">
+                    <input type="checkbox" value="${r.name}" class="rounded text-indigo-600">
+                    <span>${r.flag} ${r.name}</span>
+                </label>
+            `).join('');
+
+            spCont.innerHTML = checkboxes;
+            sgCont.innerHTML = checkboxes;
+        }
+
+        function submitResolution() {
+            const code = document.getElementById('res-code').value;
+            const spNodes = document.querySelectorAll('#res-sponsors-container input:checked');
+            const sgNodes = document.querySelectorAll('#res-signatories-container input:checked');
+            
+            const sponsors = Array.from(spNodes).map(n => n.value);
+            const signatories = Array.from(sgNodes).map(n => n.value);
+
+            const totalAttending = roster.filter(r => r.status !== 'Absent').length;
+            const maxSponsors = Math.floor(totalAttending * 0.10);
+            const minCombined = Math.ceil(totalAttending * 0.20);
+
+            if (!code) { alert("Please enter resolution title/code."); return; }
+            if (sponsors.length > maxSponsors && maxSponsors > 0) {
+                alert(`Rule Violation: Maximum allowed sponsors is ${maxSponsors} (10% of committee).`);
+                return;
+            }
+            if ((sponsors.length + signatories.length) < minCombined) {
+                alert(`Rule Violation: Combined sponsors and signatories must equal at least ${minCombined} (20% of committee).`);
+                return;
+            }
+
+            resolutions.push({ code, sponsors, signatories });
+            localStorage.setItem('prep_resolutions', JSON.stringify(resolutions));
+            renderResolutions();
+        }
+
+        function renderResolutions() {
+            const container = document.getElementById('resolutions-list');
+            if (resolutions.length === 0) {
+                container.innerHTML = `<div class="p-6 text-center text-slate-400 italic text-sm border border-slate-100 rounded-lg">No draft resolutions registered yet.</div>`;
+                return;
+            }
+            container.innerHTML = resolutions.map((r, i) => `
+                <div class="p-4 border border-slate-200 rounded-lg bg-slate-50 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-slate-900 text-sm">${r.code}</h3>
+                        <button onclick="triggerVoting('${r.code}')" class="px-3 py-1 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700">Enter Direct Voting</button>
+                    </div>
+                    <p class="text-xs text-slate-600"><strong>Sponsors:</strong> ${r.sponsors.join(', ') || 'None'}</p>
+                    <p class="text-xs text-slate-600"><strong>Signatories:</strong> ${r.signatories.join(', ') || 'None'}</p>
+                </div>
+            `).join('');
+        }
+
+        // Substantive Voting Grid Engine
+        function renderVotingGrid() {
+            const grid = document.getElementById('voting-grid');
+            const presentMembers = roster.filter(r => r.status !== 'Absent');
+
+            if (presentMembers.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center text-slate-400 italic py-4 text-sm">No present delegates to vote. Add members in Roll Call & Roster tab.</div>`;
+                updateVoteCounts();
+                return;
+            }
+
+            grid.innerHTML = presentMembers.map((m) => {
+                const rosterIndex = roster.findIndex(r => r.name === m.name);
+                let badgeClass = 'bg-slate-100 text-slate-600';
+                if (m.vote === 'YES') badgeClass = 'bg-green-600 text-white';
+                if (m.vote === 'NO') badgeClass = 'bg-red-600 text-white';
+                if (m.vote === 'PASS') badgeClass = 'bg-amber-500 text-white';
+                if (m.vote === 'ABSTAIN') badgeClass = 'bg-slate-500 text-white';
+
+                return `
+                    <div onclick="cycleVote(${rosterIndex})" class="p-3 border border-slate-200 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer text-center space-y-1 transition-colors">
+                        <div class="text-2xl">${m.flag}</div>
+                        <div class="font-medium text-xs text-slate-800 truncate">${m.name}</div>
+                        <span class="inline-block px-2 py-0.5 rounded text-xs font-bold ${badgeClass}">${m.vote || 'NONE'}</span>
+                    </div>
+                `;
+            }).join('');
+
+            updateVoteCounts();
+        }
+
+        function cycleVote(rosterIndex) {
+            const states = ['NONE', 'YES', 'NO', 'PASS', 'ABSTAIN'];
+            const member = roster[rosterIndex];
+            
+            // Rule 4.6: "Present & Voting" delegates cannot abstain
+            let allowedStates = states;
+            if (member.status === 'Present & Voting') {
+                allowedStates = ['NONE', 'YES', 'NO', 'PASS'];
+            }
+
+            const currIdx = allowedStates.indexOf(member.vote || 'NONE');
+            const nextIdx = (currIdx + 1) % allowedStates.length;
+            roster[rosterIndex].vote = allowedStates[nextIdx];
+
+            saveRoster();
+        }
+
+        function updateVoteCounts() {
+            const counts = { YES: 0, NO: 0, PASS: 0, ABSTAIN: 0 };
+            roster.forEach(r => { if (counts[r.vote] !== undefined) counts[r.vote]++; });
+
+            document.getElementById('vote-count-yes').innerText = counts.YES;
+            document.getElementById('vote-count-no').innerText = counts.NO;
+            document.getElementById('vote-count-pass').innerText = counts.PASS;
+            document.getElementById('vote-count-abstain').innerText = counts.ABSTAIN;
+
+            // Check if 2/3 substantive majority is achieved
+            const totalAttending = roster.filter(r => r.status !== 'Absent').length;
+            const threshold = Math.ceil((totalAttending * 2) / 3);
+            const resultBanner = document.getElementById('vote-result-banner');
+
+            if (counts.YES >= threshold && threshold > 0) {
+                resultBanner.classList.remove('hidden', 'bg-red-100', 'text-red-800');
+                resultBanner.classList.add('bg-green-100', 'text-green-800');
+                resultBanner.innerText = `Substantive Majority Reached! Yes Votes (${counts.YES}) ≥ Threshold (${threshold}). Draft Resolution Passes.`;
+            } else if (counts.NO > (totalAttending - threshold) && totalAttending > 0) {
+                resultBanner.classList.remove('hidden', 'bg-green-100', 'text-green-800');
+                resultBanner.classList.add('bg-red-100', 'text-red-800');
+                resultBanner.innerText = `Motion Fails. Yes Votes (${counts.YES}) cannot reach the required 2/3 Substantive Threshold (${threshold}).`;
+            } else {
+                resultBanner.classList.add('hidden');
+            }
+        }
+
+        function triggerVoting(code) {
+            alert(`Entering Direct Voting Procedure for ${code}. Standard Rules of Procedure apply: Doors are locked, no entry/exit permitted.`);
+        }
+    </script>
 </body>
 </html>
